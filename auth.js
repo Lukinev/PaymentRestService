@@ -3,12 +3,12 @@ const jwt = require('jsonwebtoken'),
 
 const checkJWT = async function (inputParams) {
     let res = {};
-    jwt.verify(inputParams.userToken, conf.jwt_params.jwt_secret, conf.jwt_params.jwt_option, function (err, decoded) {
+    jwt.verify(inputParams.user_token, conf.jwt_params.jwt_secret, conf.jwt_params.jwt_option, function (err, decoded) {
         if (err) {
             res = { status: 400 };
         }
         else {
-            if (JSON.stringify(decoded.clientName) == JSON.stringify(inputParams.clientName) && JSON.stringify(decoded.clientId) === JSON.stringify(inputParams.clientId)) {
+            if (JSON.stringify(decoded.client_name) == JSON.stringify(inputParams.client_name) && JSON.stringify(decoded.client_id) === JSON.stringify(inputParams.client_id)) {
                 res = { status: 200 }
             }
             else res = { status: 400 }

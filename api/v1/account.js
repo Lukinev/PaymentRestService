@@ -6,7 +6,7 @@ const express = require('express'),
     libs = require('./libs/functions');
 
 router.post('/account/byId', function (req, res) {
-    checkJWT(req.body).then(r => {
+    checkJWT(req.body).then(r => {// if check token
         if (r.status === 200) {
             if (req.body.account && typeof (req.body.account) === 'number') {
                 libs.execQuery(models.accountById, [req.body.account], res, global.pool_account);
