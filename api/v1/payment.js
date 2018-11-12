@@ -1,9 +1,29 @@
 const express = require('express'),
+    moment = require('moment'),
     router = express.Router(),
-    conf = require('../../config'),
-    checkJWT = require('../../auth');
-moment = require('moment');
+    checkJWT = require('../../auth'),
+    models = require('./models/models_payment'),
+    libs = require('./libs/functions');
 
+
+router.post('/payment/create', function (req, res) {
+    checkJWT(req.body).then(r => {
+        if (r.status === 200) {
+            if (req.body.terminal_id && typeof (req.body.terminal_id) === 'number') {
+                libs.insertQuery(models.paymentNewPackage, [req.body.terminal_id], global.pool_payment).then(r => {
+                    libs.insertQuery(models.paymentNew, [10, r.id], global.pool_payment).then(r2 => {
+                        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r2 });
+                    });
+
+                });
+            } else
+                res.status(400).json({ "status": 400, "error": "Bad request", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+        } else
+            res.status(400).json({ "status": 400, "error": "Bad autorized token", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+    })
+});
+
+/*
 const { Client } = require('pg');
 
 const conn_param = conf.pg_conn_param;
@@ -70,6 +90,6 @@ router.delete('/payment/:id', function (req, res) {
 
         }
     });
-});
+});*/
 
 module.exports = router;
