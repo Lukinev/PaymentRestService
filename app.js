@@ -6,7 +6,8 @@ const express = require('express'),
   cluster = require('cluster'),
   { Pool } = require('pg');
 
-global.pool = new Pool(conf.pg_pool_conn_param);
+global.pool_account = new Pool(conf.pg_pool_conn_param_accounts);
+global.pool_payment = new Pool(conf.pg_pool_conn_param_payments);
 
 let numCPUs = require('os').cpus().length;
 
