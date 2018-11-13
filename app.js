@@ -4,7 +4,10 @@ const express = require('express'),
   conf = require('./config'),
   bodyParser = require('body-parser'),
   cluster = require('cluster'),
-  { Pool } = require('pg');
+  { Pool, types } = require('pg');
+
+types.setTypeParser(1700, 'text', parseFloat);
+types.setTypeParser(20, 'text', parseInt);
 
 global.pool_account = new Pool(conf.pg_pool_conn_param_accounts);
 global.pool_payment = new Pool(conf.pg_pool_conn_param_payments);

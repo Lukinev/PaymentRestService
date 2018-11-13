@@ -13,11 +13,6 @@ function execQuery(model, params, res, connection) {
 async function insertQuery(model, params, connection) {
     const { rows } = await connection.query(model, params);
     return rows;
-    //console.log(res.rows[0])
-    // { name: 'brianc', email: 'brian.m.carlson@gmail.com' }
-
-
-
 }
 
 module.exports = { execQuery, insertQuery }
