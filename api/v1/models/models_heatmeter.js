@@ -3,14 +3,18 @@ module.exports = models = {
     heatmeterGetId:{
        name: 'hetmeter get id',
        text: `select id from public.heatmeter where sn like $1 or zn like $1` 
-   }
-   ,
+   },
    
    heatmeterSetPararams:{
        name: 'heatmeter set params',
-       text: `INSERT INTO public.params (sn, energy1, flow, power, temp1, temp2) VALUES ($1, $2, $4, 0, $5, $6)`
-   }
+       text: `INSERT INTO public.params (client_id, heatmeter_id, power,  flow, energy1, temp1, temp2, manuals, data, times) VALUES ($1, $2, $3, $4, $5, $6, $7,0,$8,$9)`
+   },
    
+   hetmeterUpdatePower:{
+        name: 'heatmeter update power',
+        text: `UPDATE public.heatmeter SET last_power=$2, data_power=$3 where id=$1`
+            
+   }
   /*
    paymentNewPackage: {
         name: 'create new payment package',
