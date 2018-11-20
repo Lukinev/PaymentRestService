@@ -11,6 +11,7 @@ types.setTypeParser(20, 'text', parseInt);
 
 global.pool_account = new Pool(conf.pg_pool_conn_param_accounts);
 global.pool_payment = new Pool(conf.pg_pool_conn_param_payments);
+global.pool_heatmeter = new Pool(conf.pg_pool_conn_param_heatmeter);
 
 let numCPUs = require('os').cpus().length;
 

@@ -2,7 +2,7 @@ const
     moment = require('moment'),
     Router = require('express-promise-router'),
     
-    models = require('./models/models_payment'),
+    models = require('./models/models_heatmeter'),
     { checkJWT } = require('./libs/auth'),
     libs = require('./libs/functions');
 router = new Router(),     
@@ -12,19 +12,29 @@ router = new Router(),
      * flow
      * temp1
      * temp2
-     * it_heatmeter 
+     * energy1
+     * id_heatmeter 
      */
+
 
 router.post('/heatmeter/setParams', async (req, res) => {
     if ((await checkJWT(req.body)).status === 200) {
-        
-        if (req.body.sn && typeof (req.body.sn) === 'number') {
-            const r = await libs.execQuery(models.paymentNewPackage, [req.body.terminal_id, 10.0], global.pool_payment);
+            const r = await libs.execQuery(models.heatmeterSetPararams, [req.body.sn, req.body.power, req.body.flow, req.body.energy1 ,req.body.temp1, req.body.temp2], global.pool_heatmeter);
             res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
-        } else
-            res.status(400).json({ "status": 400, "error": "Bad request", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
     } else
         res.status(400).json({ "status": 400, "error": "Bad autorized token", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+});
+
+
+
+router.post('/heatmeter/getId', async (req, res) =>{
+    
+     if ((await checkJWT(req.body)).status === 200) {
+         const r = await libs.execQuery(models.heatmeterGetId, [req.body.sn], global.pool_heatmeter);
+         res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
+     }
+      else
+        res.status(400).json({ "status": 400, "error": "Bad autorized token", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });    
 });
 
 /*
