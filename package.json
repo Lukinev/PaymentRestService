@@ -1,11 +1,11 @@
 {
-  "name": "rest",
+  "name": "CAPservice",
   "version": "0.0.0",
   "private": true,
   "scripts": {
     "start": "node app.js"
   },
-  "dependencies": {"router                    |||":"1.3.3    |||","body                      |":"5.1.0    |",
+  "dependencies": {
     "body-parser": "^1.18.3",
     "express": "^4.16.4",
     "express-promise-router": "^3.0.3",
