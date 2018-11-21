@@ -14,7 +14,13 @@ module.exports = models = {
         name: 'heatmeter update power',
         text: `UPDATE public.heatmeter SET last_power=$2, data_power=$3 where id=$1`
             
+   },
+   heatmeterGetHeatmeterSN:{
+       name: 'heatmeter views',
+       text: `SELECT * FROM v_meter_heat where sn like $1`
    }
+   
+   
   /*
    paymentNewPackage: {
         name: 'create new payment package',
@@ -26,3 +32,4 @@ module.exports = models = {
     */
 }
 
+''
