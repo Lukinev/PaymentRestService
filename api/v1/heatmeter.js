@@ -36,7 +36,7 @@ router.post('/heatmeter/setParams', async (req, res) => {
                                                                     global.pool_heatmeter);
                                                                     
             const u = await libs.execQuery(models.hetmeterUpdatePower, [ id_heatmeter,
-                                                                        req.body.energy,
+                                                                        parseInt(req.body.energy,10),
                                                                         moment().format('DD.MM.YYYY HH:mm:ss')
                                                                         ],
                                                                         global.pool_heatmeter);                                                        
