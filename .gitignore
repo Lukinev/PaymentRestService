@@ -3,3 +3,4 @@ package-lock.json
 config.js
 pgjwt-master.zip
 nbproject
+.DS_Store
