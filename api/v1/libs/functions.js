@@ -9,12 +9,10 @@ async function execQuery(model, params, connection) {
 // incomeParams = {requiredFields:[], request:[]}
 async function checkRequestObjectPattern(incomeParams) {
     let res = incomeParams.requiredFields.sort().every(function (value, index) {
-        if (value === incomeParams.request.sort()[index]) {
+        if (value === incomeParams.request.sort()[index])
             return true;
-        }
-        else {
+        else
             return false;
-        }
     });
     return res;
 }
