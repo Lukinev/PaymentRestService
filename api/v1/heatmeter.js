@@ -44,7 +44,7 @@ router.post('/heatmeter/setParams', async (req, res) => {
         const id_heatmeter = h.rows[0].id;
         if (id_heatmeter > 0) {
             const r = await libs.execQuery(models.heatmeterSetPararams, [req.body.client_id,
-                id_heatmeter,
+            id_heatmeter,
             req.body.power,
             req.body.flow,
             req.body.energy,
@@ -53,7 +53,7 @@ router.post('/heatmeter/setParams', async (req, res) => {
             moment().format('DD.MM.YYYY'),
             moment().format('hh:mm:ss')
             ],
-                global.pool_heatmeter);
+            global.pool_heatmeter);
 
             const u = await libs.execQuery(models.hetmeterUpdatePower, [id_heatmeter,
                 parseInt(req.body.energy, 10),

@@ -19,17 +19,7 @@ module.exports = models = {
        name: 'heatmeter views',
        text: `SELECT * FROM v_meter_heat where sn like $1`
    }
-   
-   
-  /*
-   paymentNewPackage: {
-        name: 'create new payment package',
-        text: `with pack as (
-            insert into public.packages(terminal_id) values($1) RETURNING id  
-         )
-         insert into public.payments(package_id,service_id,amount) values((select id from pack), 3,$2) RETURNING *`
-    }
-    */
+
 }
 
 ''
