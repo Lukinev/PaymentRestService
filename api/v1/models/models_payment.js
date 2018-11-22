@@ -1,6 +1,7 @@
 module.exports = models = {
     paymentById: {
         name: 'payment by id',
+        required_fields:[],
         text: `SELECT p.id, p.amount, p.provider_id, p.service_id, p.payment_timestamp, p.createdat, p.account_id
         FROM public.payments p 
         where p.id = $1`
