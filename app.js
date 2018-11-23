@@ -1,13 +1,21 @@
-const express = require('express'),
-  app = express(),
-  api_router = require('./api/api.js'),
+const
   conf = require('./config'),
   bodyParser = require('body-parser'),
   cluster = require('cluster'),
   { Pool, types } = require('pg');
 
+var fs = require('fs');
+var http = require('http');
+var https = require('https');
+var privateKey = fs.readFileSync('sslcert/ca.key');
+var certificate = fs.readFileSync('sslcert/ca.crt');
+var express = require('express'), app = express() ,api_router = require('./api/api.js');
+ 
+
 types.setTypeParser(1700, 'text', parseFloat);
 types.setTypeParser(20, 'text', parseInt);
+
+var credentials = {key: privateKey, cert: certificate}; 
 
 global.pool_account = new Pool(conf.pg_pool_conn_param_accounts);
 global.pool_payment = new Pool(conf.pg_pool_conn_param_payments);
