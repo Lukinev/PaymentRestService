@@ -55,7 +55,14 @@ else {
   app.get('/api', function (req, res) {
     res.send('<h1>Wrong route</h1>');
   });
-  app.listen(conf.api_port);
+
+var httpServer = http.createServer(app);
+var httpsServer = https.createServer(credentials, app);
+
+
+//  app.listen(conf.api_port);
+httpServer.listen(conf.api_port);
+httpsServer.listen(conf.api_port_ssl);
 
   console.log(`Worker ${process.pid} started`);
 }
