@@ -6,6 +6,10 @@ const
     { checkJWT } = require('./libs/auth'),
     libs = require('./libs/functions');
 
+router.get('/payment/', (req, res) => {
+    res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS') });
+});
+
 router.post('/payment/create', async (req, res) => {
     const checkRequiredFields = await libs.checkRequestObjectPattern({ requiredFields: models.paymentNewPackage.required_fields, request: Object.keys(req.body) });
     if ((await checkJWT(req.body)).status === 200) {

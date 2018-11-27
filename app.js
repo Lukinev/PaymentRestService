@@ -1,22 +1,29 @@
 const
-  conf = require('./config'),
   bodyParser = require('body-parser'),
   cluster = require('cluster'),
-  { Pool, types } = require('pg');
+  compression = require('compression'),
+  { Pool, types } = require('pg'),
+  fs = require('fs'),
+  https = require('https'),
+  express = require('express'),
+  app = express(),
+  conf = require('./config'),
+  api_router = require('./api/api.js');
 
-var fs = require('fs');
-var http = require('http');
-var https = require('https');
-var privateKey = fs.readFileSync('sslcert/ca.key');
-var certificate = fs.readFileSync('sslcert/ca.crt');
-var express = require('express'), app = express() ,api_router = require('./api/api.js');
- 
-
+// use to correct convert to float & bigint from postgresql
 types.setTypeParser(1700, 'text', parseFloat);
 types.setTypeParser(20, 'text', parseInt);
 
-var credentials = {key: privateKey, cert: certificate}; 
+// option for use HTTPS
+const https_options = {
+  key: fs.readFileSync("./cert/server.key"),
+  cert: fs.readFileSync("./cert/server.crt"),
+  ca: fs.readFileSync("./cert/ca.crt"),
+  requestCert: true,
+  rejectUnauthorized: true
+};
 
+// pools of connections to DB 
 global.pool_account = new Pool(conf.pg_pool_conn_param_accounts);
 global.pool_payment = new Pool(conf.pg_pool_conn_param_payments);
 global.pool_heatmeter = new Pool(conf.pg_pool_conn_param_heatmeter);
@@ -46,16 +53,18 @@ else {
   app.set('jwt_secret', conf.jwt_secret); // set secret variable
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
-  //app.use(compression());
+  app.use(compression());
   app.use('/api/' + conf.version + '/', api_router);
 
   app.get('/', function (req, res) {
     res.send('<h1>Wrong route</h1>');
   });
+
   app.get('/api', function (req, res) {
     res.send('<h1>Wrong route</h1>');
   });
-  app.listen(conf.api_port);
+
+  https.createServer(https_options, app).listen(conf.api_port);
 
   console.log(`Worker ${process.pid} started`);
 }
