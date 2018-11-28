@@ -74,7 +74,8 @@ httpServer.listen(conf.api_port);
 httpsServer.listen(conf.api_port_ssl);
 =======
   https.createServer(https_options, app).listen(conf.api_port);
->>>>>>> baf74b032b0b78f51f16dd4cea34d25ce74b9d35
+
+   baf74b032b0b78f51f16dd4cea34d25ce74b9d35
 
   console.log(`Worker ${process.pid} started`);
 }
