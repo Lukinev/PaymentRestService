@@ -53,7 +53,7 @@ if (cluster.isMaster) {
 }
 else {
   app.set('jwt_secret', conf.jwt_secret); // set secret variable
-  app.use(cors);
+  app.use(cors());
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(compression());
@@ -70,7 +70,7 @@ else {
 var httpServer = http.createServer(app);
 var httpsServer = https.createServer(https_options, app);
 
-//  app.listen(conf.api_port);
+
 httpServer.listen(conf.api_port);
 httpsServer.listen(conf.api_port_ssl);
 
