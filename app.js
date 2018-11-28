@@ -16,9 +16,9 @@ types.setTypeParser(20, 'text', parseInt);
 
 // option for use HTTPS
 const https_options = {
-  key: fs.readFileSync("./cert/server.key"),
-  cert: fs.readFileSync("./cert/server.crt"),
-  ca: fs.readFileSync("./cert/ca.crt"),
+    key: fs.readFileSync("./cert/server.key"),
+    cert: fs.readFileSync("./cert/server.crt"),
+    ca: fs.readFileSync("./cert/ca.crt"),
   requestCert: true,
   rejectUnauthorized: true
 };
@@ -74,7 +74,7 @@ httpsServer.listen(conf.api_port_ssl);
 
   https.createServer(https_options, app).listen(conf.api_port);
 
-   baf74b032b0b78f51f16dd4cea34d25ce74b9d35
+   //baf74b032b0b78f51f16dd4cea34d25ce74b9d35
 
   console.log(`Worker ${process.pid} started`);
 }
