@@ -4,11 +4,13 @@ const
   compression = require('compression'),
   { Pool, types } = require('pg'),
   fs = require('fs'),
+  http = require('http'),
   https = require('https'),
   express = require('express'),
   app = express(),
   conf = require('./config'),
   api_router = require('./api/api.js');
+  var cors = require('cors');
 
 // use to correct convert to float & bigint from postgresql
 types.setTypeParser(1700, 'text', parseFloat);
@@ -51,6 +53,7 @@ if (cluster.isMaster) {
 }
 else {
   app.set('jwt_secret', conf.jwt_secret); // set secret variable
+  app.use(cors);
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(compression());
@@ -65,7 +68,7 @@ else {
   });
 
 var httpServer = http.createServer(app);
-var httpsServer = https.createServer(credentials, app);
+var httpsServer = https.createServer(https_options, app);
 
 
 //  app.listen(conf.api_port);
