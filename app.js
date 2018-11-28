@@ -64,7 +64,6 @@ else {
     res.send('<h1>Wrong route</h1>');
   });
 
-<<<<<<< HEAD
 var httpServer = http.createServer(app);
 var httpsServer = https.createServer(credentials, app);
 
@@ -72,7 +71,7 @@ var httpsServer = https.createServer(credentials, app);
 //  app.listen(conf.api_port);
 httpServer.listen(conf.api_port);
 httpsServer.listen(conf.api_port_ssl);
-=======
+
   https.createServer(https_options, app).listen(conf.api_port);
 
    baf74b032b0b78f51f16dd4cea34d25ce74b9d35
