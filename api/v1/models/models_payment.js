@@ -11,10 +11,7 @@ module.exports = models = {
         required_fields: ['terminal_id',
             'account',
             'amount',
-            'service_id',
-            'client_name',
-            'client_id',
-            'user_token'],
+            'service_id'],
         text: `with pack as (
             insert into public.packages(terminal_id) values($1) RETURNING id  
          )

@@ -3,6 +3,7 @@ module.exports = models = {
     heatmeterGetId:{
        name: 'hetmeter get id',
        text: `select id from public.heatmeter where sn like $1 or zn like $1` 
+       //text: `select id from public.heatmeter where sn like $1` 
    },
    
    heatmeterSetPararams:{

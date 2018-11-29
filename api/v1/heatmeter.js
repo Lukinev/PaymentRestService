@@ -40,13 +40,8 @@ router.get('/heatmeter/setParams', async (req, res) => {
 
 router.post('/heatmeter/setParams', async (req, res) => {
     var id_heatmeter = 0;
-    if ((await checkJWT(req.body)).status === 200) {
-        try {
             const h = await libs.execQuery(models.heatmeterGetId, [req.body.sn], global.pool_heatmeter);
             id_heatmeter = h.rows[0].id;
-        } catch (error) {
-                console.log("Error read params: "+req.body.sn+"\n");    
-        }
         if (id_heatmeter > 0) {
             const r = await libs.execQuery(models.heatmeterSetPararams, [req.body.client_id,
             id_heatmeter,
@@ -70,32 +65,20 @@ router.post('/heatmeter/setParams', async (req, res) => {
 
         } else
             res.status(400).json({ "status": 400, "error": "Not find heatmeter: " + req.body.sn, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
-    } else
-        res.status(400).json({ "status": 400, "error": "Bad autorized token", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
 });
 
 router.post('/heatmeter/getHeatmeter', async (req, res) => {
-    if ((await checkJWT(req.body)).status === 200) {
         const r = await libs.execQuery(models.heatmeterGetHeatmeterSN, [req.body.sn], global.pool_heatmeter);
         if (r.rows[0].id > 0) {
             res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
         } else
             res.status(400).json({ "status": 400, "error": "Not find heatmeter: " + req.body.sn, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
-    }
-    else
-        res.status(400).json({ "status": 400, "error": "Bad autorized token", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
-
-
+    
 });
 
 router.post('/heatmeter/getId', async (req, res) => {
-
-    if ((await checkJWT(req.body)).status === 200) {
         const r = await libs.execQuery(models.heatmeterGetId, [req.body.sn], global.pool_heatmeter);
         res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
-    }
-    else
-        res.status(400).json({ "status": 400, "error": "Bad autorized token", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
 });
 
 /*
