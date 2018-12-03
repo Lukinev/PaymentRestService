@@ -71,8 +71,8 @@ var httpServer = http.createServer(app);
 var httpsServer = https.createServer(https_options, app);
 
 
-httpServer.listen(conf.api_port);
-httpsServer.listen(conf.api_port_ssl);
+  httpServer.listen(conf.api_port);
+  httpsServer.listen(conf.api_port_ssl);
 
   console.log(`Worker ${process.pid} started`);
 }
