@@ -7,18 +7,16 @@ const moment = require('moment'),
     var request = require('request');
 
 router.get('/account/getBLANK2016/:ls', async (req, res)=> {
-    //res.send('user' + req.params.ls);    
-    //console.log(req.params.ls);
     var url = 'http://85.238.97.144:3000/webload/'+req.params.ls+'.0000000000.0';
-    //Сначала получим UID из л/с поставщика
     request (url, async (error, response, body)=> {
         if (!error && response.statusCode === 200) {
            var r = JSON.parse(body)
            r = r['message'][0];
-           
+            //выдаем инфо из базы ТГО 
            res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r });
+           //и обновляем информацию в нашей базе 
         } else {
-          //  console.log("Error connect to central DB: ", error, ", status code: ", response.statusCode)
+            //Если доступа к базе ТГО нет, то брать информацию с  сервера
             res.status(400).json({ "status": 400, "error": "Error connect central DB", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
         }
     })    
