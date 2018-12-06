@@ -52,24 +52,22 @@ module.exports = models = {
 	accountTsaUpdate:{
 		name: 'tsa update',
 		text: 'UPDATE public.tsa SET kp=$1, koplate=$2, nachisl=$3, norm=$4, proc_lgo=$5, procent_lg=$6, summa_dolg=$7, '+
-					'tarif=$8, usluga=$9, a_close=$10, a_dem=$11, sum_trf_ht=$12, sum_topay_ht=$13, saldon=$14, sum_topay_fw=$15, '+ 
-					'sum_pay_bank=$16, sum_pay_mpom=$17, sum_pay_comp=$18, saldok=$19'+
-				'where ls=$20 and id_period=$21'
+					'tarif=$8, usluga=$9, sum_trf_ht=$10, sum_topay_ht=$11, saldon=$12, sum_topay_fw=$13, '+ 
+					'sum_pay_bank=$14, sum_pay_mpom=$15, sum_pay_comp=$16, saldok=$17'+
+				'where ls=$18 and id_period=$19'
 	},
 	accountTsaInsert:{
 		name: 'tsa insert',
-		required_fields: ['ls', 'dt', 'ls_poluch', 'kp', 'kod_poluch', 'usluga', 'summa_dolg', 'nachisl', 'tarif', 'subsid', 'id_period'],
 		text: 'INSERT INTO TSA (ls, dt,ls_poluch, kp, kod_poluch, usluga, summa_dolg, nachisl, tarif, subsid, id_period, '+
-					'A_CLOSE, A_DEM, SUM_TRF_HT, SUM_TOPAY_HT, SALDON, SUM_TOPAY_FW, SUM_PAY_BANK, SUM_PAY_MPOM, SUM_PAY_COMP, SALDOK'+
+					' SUM_TRF_HT, SUM_TOPAY_HT, SALDON, SUM_TOPAY_FW, SUM_PAY_BANK, SUM_PAY_MPOM, SUM_PAY_COMP, SALDOK'+
 				') VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, '+
-				'$12, $13, $14, $15, $16, $17, $18, $19, $20, $21'+
+				'$12, $13, $14, $15, $16, $17, $18, $19'+
 			')'
 	},
 
 	accountShetaUpdate:{
-		required_fields: ['fio','k_lgot', 'kp', 'kp_jek', 'pl_o', 'ls'],
 		name: 'sheta update',
-		text: 'UPDATE sheta SET fio=$1, k_lgot=$2, kp=$3, kp_jek=$4, pl_o=$5 where ls=$6'
+		text: 'UPDATE sheta SET fio=$1, k_lgot=$2, kp=$3, kp_jek=$4, pl_o=$5, a_close=$6, a_dem=$7 where ls=$8'
 	},
 
 	//Получение единого лицевого счета из общей базы UID
@@ -77,6 +75,101 @@ module.exports = models = {
 		name:'account get UID',
 		required_fields: ['account', 'kod_org'],
 		text: `select ls.ls, ls.kod_org, ls.name ls_org from ls_shet ls where ls.name = $1 and ls.kod_org= $2`
-	}
+	},
+
+	//Количество записей бланков по л/с
+	accountBlank2016Count: {
+			name:'blank2016 get count',
+			text: 'select count(ls) from blank2016 b where b.ls = $1;'
+	},
+
+	accountBlank2016Insert:{
+		name: 'blank2016 insert',
+		text: `INSERT INTO public.blank2016
+		(ls, sq, addr_id, sq_dom, pers, a_state, a_act_hw, a_act_ht, a_metr_hw, a_metr_ht, a_metr_house_hw, a_metr_house_ht, date_check_hw, date_check_ht, data_metr_hw, data_norm_hw, gkal_1_2, gkal_3_4, gkal_5, gkal_dom, gkalm_dom, dt_hw_dom, sum_ht_dom, sum_hw_dom)
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24);`
+	},
+
+	//Получение данных бланка по UID
+	accountBlank2016Get: {
+		name:'blank2016 get UID',
+		text: `select 
+				b.ADDR_ID,
+				l."name" as civ_code, 
+				s.fio civ_name,
+				(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+		 		b.sq,
+		 		b.sq_dom,
+		 		b.pers,
+		 		b.A_STATE,
+		 		b.A_ACT_HW,
+		 		b.A_ACT_HT,
+		 		b.A_METR_HW,
+		 		b.A_METR_HT,
+		 		b.A_METR_HOUSE_HW,
+		 		b.A_METR_HOUSE_HT,
+		 		b.DATE_CHECK_HW,
+		 		b.DATE_CHECK_HT,
+		 		b.DATA_METR_HW,
+		 		b.DATA_NORM_HW,
+		 		b.GKAL_1_2,
+		 		b.GKAL_3_4,
+		 		b.GKAL_5,
+		 		b.GKAL_DOM,
+		 		b.GKALM_DOM,
+		 		b.DT_HW_DOM,
+		 		b.SUM_HT_DOM,
+		 		b.SUM_HW_DOM
+  			from blank2016 b
+	  			left join sheta as s on s.ls = b.ls
+	  			left join ls_shet as l  on (l.ls=b.ls and l.kod_org=$2) 
+	  			left join public.street as str on str.np = s.street_nom 
+  			where b.ls=$1`
+	},
+
+	accountGetCalc:{
+		name: 'get calc',
+		text: `select 
+				t.id_period PERIOD_ID,
+				p."Name" PERIOD_NAME,
+				l."name" CIV_CODE,
+				t.dt REG_DATE,
+				l.fio CIV_NAME,
+				(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+				v."name" SERV_NAME,
+				s.kp PERS,
+				s.pl_o SQ,
+				s.a_close A_CLOSE,
+				s.a_dem A_DEM,
+				t.sum_trf_ht SUM_TRF_HT,
+        		t.sum_topay_ht SUM_TOPAY_HT,
+        		t.sum_topay_fw SUM_TRF_FW,
+        		t.sum_topay_fw SUM_TOPAY_FW,
+        		t.saldon SALDON,
+        		t.koplate SUM_TOPAY,
+        		t.sum_pay_bank SUM_PAY_BANK,
+        		t.subsid SUM_PAY_SUBS,
+        		t.sum_pay_mpom SUM_PAY_MPOM,
+        		t.sum_pay_comp SUM_PAY_COMP,
+        		t.saldok SALDOK
+        		/*
+                "A_ACT_HW": 0,
+                "A_METR_HW": 0,
+                "A_ACT_HT": 1,
+                "A_METR_HT": 0,
+                "METER_ID": 10153,
+                "PRIV_CNT": 0,
+                "A_PRIV": 0,
+                "A_INDB": 0*/
+			from tsa t
+				left join ls_shet as l on (l.ls=t.ls)
+				left join viduslugi as v on t.usluga=v.id
+				left join sheta as s on s.ls=t.ls
+				left join street as str on str.np = s.street_nom 
+				left join period as p on p.id = t.id_period
+			where 
+  				t.ls=1000239284`
+		}
+
 	
 }
