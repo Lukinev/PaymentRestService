@@ -9,10 +9,10 @@ const moment = require('moment'),
 router.get('/account/getBLANK2016/:ls', async (req, res)=> {
     //Сначала ищем эту информацию у себя в базе
     //Сначала получим UID из л/с поставщика
-    const u = await libs.execQuery(models.accountGetUID,[req.params.ls,39], global.pool_account);
+    var u = await (libs.execQuery(models.accountGetUID,[req.params.ls,39], global.pool_account));
     const uid = u.rows[0].ls;
 
-    const blank2016_count = await libs.execQuery(models.accountBlank2016Count,[uid], global.pool_account);
+    const blank2016_count = await (libs.execQuery(models.accountBlank2016Count,[uid], global.pool_account));
     //console.log(blank2016_count.rows[0].count);
     const row_count = blank2016_count.rows[0].count;
     if(row_count==0){
