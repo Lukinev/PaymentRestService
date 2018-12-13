@@ -12,12 +12,8 @@ module.exports = models = {
 		--0 as current_vulue, -- Если это прибор учета то отображаются текущие показания если нет прибора то 0
 		ls.FIO as account_holder  ,-- Фамилия И.О. абонента зарегистрированного за услугой поставщиком услуг
 		t.tarif as tarif, -- Тариф за оказанную услугу
-		t.summa_dolg as  k_oplate, -- Сумма к оплате
+		t.koplate as sum_topay, -- Сумма к оплате
 		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
-    	--str.name as street,-- Адрес абонента зарегистрированного за услугой										 
-		--s.home,
-		--s.korp,
-		--s.kv,
 		s.ls as  uid, -- Единый номер лицевого счета
 		ls.name as account, -- лицевой счет поставщика услуг.
 		o.id as provider_id ,-- код поставщика услуг согласно справочника организаций (ORGANIZATION)*
@@ -190,8 +186,37 @@ module.exports = models = {
   				and
   				s.kv like $3
   				and
-				  s.a_close = 0				  
+				  s.a_close = 0	
+				and
+				  s.kp>0
+
  		order by s.home, s.korp, s.kv`
+	}, 
+
+	accountFinfFIO:{
+		name: 'sheta find FIO',
+		text: `select * from (select 
+			s.ls uid,
+			--l."name" CIV_CODE,
+			l.fio FIO,
+			(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+			--s.kp PERS,
+			--s.pl_o SQ,
+			--t.id_period,
+			t.koplate sum_topay
+				from sheta s
+					left join ls_shet as l on (l.ls=s.ls and l.kod_org=$2)
+					left join street as str on str.np = s.street_nom 
+					left join tsa as t on (t.ls = s.ls and t.id_period=(select p.id from period p where p."current"=true))
+					where 
+					s.a_close=0
+					and
+					s.kp>0
+				  
+			  order by fio, s.street_nom, s.home, s.korp, s.kv
+			  )sh
+			  where
+				  sh.fio like $1`
 	}
 
 	

@@ -38,7 +38,8 @@ if (conf.coreNum > 0) {
 }
 
 if (cluster.isMaster) {
-  console.log(`Master ${process.pid} is running`);
+
+  console.log('Master ${process.pid} is running');
 
   // Fork workers.
   for (let i = 0; i < numCPUs; i++) {
