@@ -163,6 +163,30 @@ router.post('/account/getCalc', async (req, res) => {
 
 }),
 
+//Поиск абонентов по адрессу
+router.post('/account/findAddress', async (req,res)=>{
+    if (req.body.street.length > 4){
+        street = req.body.street;
+        street=street.replace(/[^A-Za-zА-Яа-яЁё]/g, "");
+        street = '%'+street+'%';
+        console.log(street); 
+        var u = await (libs.execQuery(models.accountFindAddress,[street,req.body.home, req.body.kv, 39], global.pool_account));
+        if (u.rows[0].uid>0){ 
+            res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
+        }else{
+            res.status(400).json({ "status": 400, "error": "Not find Abonent", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+
+        }
+    }else{
+        res.status(400).json({ "status": 400, "error": "Size of street small", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+
+    }
+}),
+
+router.post('/account/findFIO', async (req, res)=>{
+
+});
+
 function updateTSA(){
 
 }

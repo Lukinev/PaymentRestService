@@ -6,6 +6,8 @@ module.exports = models = {
         FROM public.payments p 
         where p.id = $1`
     },
+    
+    
     paymentNewPackage: {
         name: 'create new payment package',
         required_fields: ['terminal_id',

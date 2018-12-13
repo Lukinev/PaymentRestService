@@ -169,7 +169,30 @@ module.exports = models = {
 				left join period as p on p.id = t.id_period
 			where 
   				t.ls=1000239284`
-		}
+	},
+
+	accountFindAddress:{
+		name: 'sheta find address',
+		text: `select 
+		s.ls UID,
+		l."name" CIV_CODE,
+		l.fio CIV_NAME,
+		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+		s.kp PERS,
+		s.pl_o SQ
+			from sheta s
+				left join ls_shet as l on (l.ls=s.ls and l.kod_org=$4)
+				left join street as str on str.np = s.street_nom 
+			where 
+  				(str."name" like $1 or str.name_u like $1)
+  				and
+  				s.home like $2
+  				and
+  				s.kv like $3
+  				and
+				  s.a_close = 0				  
+ 		order by s.home, s.korp, s.kv`
+	}
 
 	
 }
