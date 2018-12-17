@@ -3,33 +3,42 @@ module.exports = models = {
 		name: 'account debt by id',
 		required_fields: ['account'],
         text: `select
-		to_char(t.DT, 'DD.MM.YYYY hh:mm:ss.ms') update_date, 
+		--to_char(t.DT, 'DD.MM.YYYY hh:mm:ss.ms') update_date, 
 		t.USLUGA as service_id,
 		t.id_period,
 		u."name" as service_name,
 		--0 as id_counter, -- Если это прибор учета то отображается его номер, если нет счетчика то 0
 		--0 as previous_value, -- Если это прибор учета то отображаются предыдущие показания если нет прибора то 0
 		--0 as current_vulue, -- Если это прибор учета то отображаются текущие показания если нет прибора то 0
-		ls.FIO as account_holder  ,-- Фамилия И.О. абонента зарегистрированного за услугой поставщиком услуг
-		t.tarif as tarif, -- Тариф за оказанную услугу
-		t.koplate as sum_topay, -- Сумма к оплате
+		ls.FIO as fio  ,-- Фамилия И.О. абонента зарегистрированного за услугой поставщиком услуг
+		t.sum_trf_ht as tarif, -- Тариф за оказанную услугу
+		t.sum_topay_ht+t.sum_topay_fw as sum_topay, -- Сумма к оплате
 		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 		s.ls as  uid, -- Единый номер лицевого счета
 		ls.name as account, -- лицевой счет поставщика услуг.
-		o.id as provider_id ,-- код поставщика услуг согласно справочника организаций (ORGANIZATION)*
-		o."name" as provider_name -- Наименование организации поставщика услуг
-		--o.mfo  as provider_mfo, -- МФО поставщика услуг
-		--o.kod_okpo  as provider_okpo,-- ОКПО поставщика услуг
-		--o.bank provider_bank_name, -- Наименование банка поставщика услуг.
-		--'' provider_bank_account
-		from public.sheta as s 
-		join public.ls_shet as ls on ls.ls = s.ls
-		join public.organization as o on o.id = ls.kod_org
-		join public.tsa as t on t.ls = ls.ls and t.usluga = ls.usluga 
-		left join public.street as str on str.np = s.street_nom 
-		left join public.viduslugi as u on u.id = t.usluga
+		o.id as provider_id,-- код поставщика услуг согласно справочника организаций (ORGANIZATION)*
+		o."name" as provider_name, -- Наименование организации поставщика услуг
+		o.mfo  as provider_mfo, -- МФО поставщика услуг
+		o.kod_okpo  as provider_okpo,-- ОКПО поставщика услуг
+		b.name_print provider_bank_name, -- Наименование банка поставщика услуг.
+		o.ns provider_bank_account
 		
-		where s.ls = $1 and t.id_period=(select id from period p where p."current"=true)`
+		from public.sheta as s 
+			join public.ls_shet as ls on ls.ls = s.ls
+			join public.organization as o on o.id = ls.kod_org
+			join public.tsa as t on t.ls = ls.ls and t.usluga = ls.usluga 
+			left join public.street as str on str.np = s.street_nom 
+			left join public.viduslugi as u on u.id = t.usluga
+			left join public.bank as b on b.id = o.bank
+		
+		--where s.ls = $1 and t.id_period=(select id from period p where p."current"=true)
+		where s.ls = $1 and 
+		(
+		t.id_period=(select id from period p where p."current"=true)
+		or 
+		t.id_period=(select max(t.id_period) from tsa t where ls=$1)
+		)
+		`
 	},
 	
 	accountCurrPeriod: {
@@ -183,7 +192,7 @@ module.exports = models = {
   				(str."name" like $1 or str.name_u like $1)
   				and
   				s.home like $2
-  				and
+				and  
   				s.kv like $3
   				and
 				  s.a_close = 0	
@@ -203,7 +212,7 @@ module.exports = models = {
 			--s.kp PERS,
 			--s.pl_o SQ,
 			--t.id_period,
-			t.koplate sum_topay
+			t.sum_topay_ht+t.sum_topay_fw as sum_topay
 				from sheta s
 					left join ls_shet as l on (l.ls=s.ls and l.kod_org=$2)
 					left join street as str on str.np = s.street_nom 

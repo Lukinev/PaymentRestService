@@ -11,12 +11,15 @@ router.get('/payment/', (req, res) => {
 });
 
 router.post('/payment/create', async (req, res) => {
-
+    
+    if ((await checkJWT(req.body)).status === 200) {
             if (req.body.terminal_id && typeof (req.body.terminal_id) === 'number') {
                 const r = await libs.execQuery(models.paymentNewPackage, [req.body.terminal_id, req.body.service_id, req.body.amount], global.pool_payment);
                 res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
             } else
                 res.status(400).json({ "status": 400, "error": "Bad request", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+    } else
+        res.status(400).json({ "status": 400, "error": "Bad autorized token", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
 });
 
 router.post('/payment/byid', async (req, res) => {

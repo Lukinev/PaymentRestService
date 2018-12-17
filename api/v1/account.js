@@ -65,12 +65,13 @@ router.get('/account/getBLANK2016/:ls', async (req, res)=> {
 })
 
 router.post('/account/byAcc', async (req, res) => {
-        var url = 'http://85.238.97.144:3000/webload/'+req.body.account+'.0000000000.5';
+        //var url = 'http://85.238.97.144:3000/webload/'+req.body.account+'.0000000000.5';
         //Сначала получим UID из л/с поставщика
         const u = await libs.execQuery(models.accountGetUID,[req.body.account,req.body.kod_org], global.pool_account);
         const uid = u.rows[0].ls;
         //пробуем получить данные с внешнего протокола
-        request (url, async (error, response, body)=> {
+
+        /*request (url, async (error, response, body)=> {
             if (!error && response.statusCode === 200) {
               const fbResponse = JSON.parse(body)
               const dt = fbResponse['message'][0];
@@ -145,11 +146,10 @@ router.post('/account/byAcc', async (req, res) => {
             }
             } else {
               console.log("Error connect to Oracle: ", error, ", status code: ", response.statusCode)
-            }
-            
-        });
+            } 
+        });*/
 
-        if (u.rows[0].ls>0){ 
+        if (uid>0){ 
             //теперь получаем данные по uid
             const r = await libs.execQuery(models.accountById, [uid], global.pool_account);
             res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
