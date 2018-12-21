@@ -211,7 +211,7 @@ module.exports = models = {
 			(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 			--s.kp PERS,
 			--s.pl_o SQ,
-			--t.id_period,
+			--t.id_period,'
 			t.sum_topay_ht+t.sum_topay_fw as sum_topay
 				from sheta s
 					left join ls_shet as l on (l.ls=s.ls and l.kod_org=$2)
