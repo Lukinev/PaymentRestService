@@ -187,7 +187,7 @@ module.exports = models = {
 		s.pl_o SQ
 			from sheta s
 				left join ls_shet as l on (l.ls=s.ls and l.kod_org=$4)
-				left join street as str on str.np = s.street_nom 
+				left join s\treet as str on str.np = s.street_nom 
 			where 
   				(str."name" like $1 or str.name_u like $1)
   				and
