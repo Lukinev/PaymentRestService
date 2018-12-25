@@ -75,11 +75,18 @@ module.exports = models = {
 		text: 'UPDATE sheta SET fio=$1, k_lgot=$2, kp=$3, kp_jek=$4, pl_o=$5, a_close=$6, a_dem=$7 where ls=$8'
 	},
 
-	//Получение единого лицевого счета из общей базы UID
+	//Получение единого лицевого счета из общей базы UID по организации
+	accountGetUID_ORG: {
+		name:'account get UID for provider_id',
+		required_fields: ['account', 'provider_id'],
+		text: `select ls.ls, ls.kod_org, ls.name ls_org from ls_shet ls where ls.name = $1 and ls.kod_org= $2`
+	},
+
+	//Получение единого лицевого счета из общей базы UID по организации
 	accountGetUID: {
 		name:'account get UID',
-		required_fields: ['account', 'kod_org'],
-		text: `select ls.ls, ls.kod_org, ls.name ls_org from ls_shet ls where ls.name = $1 and ls.kod_org= $2`
+		required_fields: ['account'],
+		text: `select ls.ls, ls.kod_org, ls.name ls_org from ls_shet ls where ls.name = $1`
 	},
 
 	//Количество записей бланков по л/с
@@ -135,8 +142,8 @@ module.exports = models = {
 	accountGetCalc:{
 		name: 'get calc',
 		text: `select 
-				t.id_period PERIOD_ID,
 				p."Name" PERIOD_NAME,
+				t.id_period PERIOD_ID,
 				l."name" CIV_CODE,
 				t.dt REG_DATE,
 				l.fio CIV_NAME,
@@ -147,16 +154,16 @@ module.exports = models = {
 				s.a_close A_CLOSE,
 				s.a_dem A_DEM,
 				t.sum_trf_ht SUM_TRF_HT,
-        		t.sum_topay_ht SUM_TOPAY_HT,
-        		t.sum_topay_fw SUM_TRF_FW,
-        		t.sum_topay_fw SUM_TOPAY_FW,
-        		t.saldon SALDON,
-        		t.koplate SUM_TOPAY,
-        		t.sum_pay_bank SUM_PAY_BANK,
-        		t.subsid SUM_PAY_SUBS,
-        		t.sum_pay_mpom SUM_PAY_MPOM,
-        		t.sum_pay_comp SUM_PAY_COMP,
-        		t.saldok SALDOK
+				t.sum_topay_ht SUM_TOPAY_HT,
+				t.sum_trf_fw SUM_TRF_FW,
+				t.sum_topay_fw SUM_TOPAY_FW,
+				t.saldon SALDON,
+				t.sum_topay SUM_TOPAY,
+				t.sum_pay_bank SUM_PAY_BANK,
+				t.subsid SUM_PAY_SUBS,
+				t.sum_pay_mpom SUM_PAY_MPOM,
+				t.sum_pay_comp SUM_PAY_COMP,
+				t.saldok SALDOK
         		/*
                 "A_ACT_HW": 0,
                 "A_METR_HW": 0,
@@ -173,7 +180,8 @@ module.exports = models = {
 				left join street as str on str.np = s.street_nom 
 				left join period as p on p.id = t.id_period
 			where 
-  				t.ls=1000239284`
+				  t.ls=$1
+			order by t.id_period`
 	},
 
 	accountFindAddress:{

@@ -12,7 +12,7 @@ router.get('/payment/', (req, res) => {
 
 router.post('/payment/create', async (req, res) => {
     
-    if ((await checkJWT(req.body)).status === 200) {
+    if (await checkJWT(req.body).status === 200) {
            // if (req.body.package_id ===&& typeof (req.body.client_id) === 'number') {
 //                const r = await libs.execQuery(models.paymentNewPackage, [req.body.terminal_id, req.body.service_id, req.body.amount], global.pool_payment);
 

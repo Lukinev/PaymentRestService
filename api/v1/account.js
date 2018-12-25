@@ -65,10 +65,21 @@ router.get('/account/getBLANK2016/:ls', async (req, res)=> {
 })
 
 router.post('/account/byAcc', async (req, res) => {
+        var uid;
+        var u;
+         //Сначала получим UID из л/с поставщика
+        if (Boolean(req.body.provider_id) == false)
+        {
+            u = await libs.execQuery(models.accountGetUID,[req.body.account], global.pool_account);
+            console.log("variable: 'provider_id' not find");
+        }else {
+            u = await libs.execQuery(models.accountGetUID_ORG,[req.body.account, req.body.provider_id], global.pool_account);     
+        }
         //var url = 'http://85.238.97.144:3000/webload/'+req.body.account+'.0000000000.5';
-        //Сначала получим UID из л/с поставщика
-        const u = await libs.execQuery(models.accountGetUID,[req.body.account,req.body.kod_org], global.pool_account);
-        const uid = u.rows[0].ls;
+       
+        uid = u.rows[0].ls;
+       
+
         //пробуем получить данные с внешнего протокола
 
         /*request (url, async (error, response, body)=> {
@@ -160,6 +171,27 @@ router.post('/account/byAcc', async (req, res) => {
 //Получение текущего стостояния абонента
 //аналог функции дениса getCalc
 router.post('/account/getCalc', async (req, res) => {
+    var uid;
+    var u;
+     //Сначала получим UID из л/с поставщика
+    if (Boolean(req.body.provider_id) == false)
+    {
+        u = await libs.execQuery(models.accountGetUID,[req.body.account], global.pool_account);
+        console.log("variable: 'provider_id' not find");
+    }else {
+        u = await libs.execQuery(models.accountGetUID_ORG,[req.body.account, req.body.provider_id], global.pool_account);     
+    }
+    //var url = 'http://85.238.97.144:3000/webload/'+req.body.account+'.0000000000.5';
+   
+    uid = u.rows[0].ls;
+
+    if (uid>0){ 
+        //теперь получаем данные по uid
+        const r = await libs.execQuery(models.accountGetCalc, [uid], global.pool_account);
+        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
+    }else
+        res.status(400).json({ "status": 400, "error": "Not find UID", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+
 
 }),
 
@@ -184,12 +216,17 @@ router.post('/account/findAddress', async (req,res)=>{
 }),
 
 router.post('/account/findFIO', async (req, res)=>{
+    var provider_id = 39;
+    if (Boolean(req.body.provider_id)!=false){
+        provider_id = req.body.provider_id;
+    }
+
     if (req.body.fio.length > 5){
         fio = req.body.fio;
         fio=fio.replace(/[^A-Za-zА-Яа-яЁё ]/g, "");
         fio = fio+'%';
-        console.log(fio); 
-        var u = await (libs.execQuery(models.accountFinfFIO,[fio, 39], global.pool_account));
+        //console.log(fio); 
+        var u = await (libs.execQuery(models.accountFinfFIO,[fio, provider_id], global.pool_account));
         if (u.rows[0].uid>0){ 
             res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
         }else{
