@@ -79,14 +79,14 @@ module.exports = models = {
 	accountGetUID_ORG: {
 		name:'account get UID for provider_id',
 		required_fields: ['account', 'provider_id'],
-		text: `select ls.ls, ls.kod_org, ls.name ls_org from ls_shet ls where ls.name = $1 and ls.kod_org= $2`
+		text: `select ls.ls uid, ls.kod_org, ls.name ls_org from ls_shet ls where ls.name = $1 and ls.kod_org= $2`
 	},
 
 	//Получение единого лицевого счета из общей базы UID по организации
 	accountGetUID: {
 		name:'account get UID',
 		required_fields: ['account'],
-		text: `select ls.ls, ls.kod_org, ls.name ls_org from ls_shet ls where ls.name = $1`
+		text: `select ls.ls uid, ls.kod_org, ls.name ls_org from ls_shet ls where ls.name = $1 and ls.kod_org = $2`
 	},
 
 	//Количество записей бланков по л/с
@@ -108,7 +108,7 @@ module.exports = models = {
 		text: `select 
 				b.ADDR_ID,
 				l."name" as civ_code, 
-				s.fio civ_name,
+				l.fio civ_name,
 				(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 		 		b.sq,
 		 		b.sq_dom,

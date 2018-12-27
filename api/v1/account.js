@@ -6,13 +6,18 @@ const moment = require('moment'),
     libs = require('./libs/functions');
     var request = require('request');
 
-router.get('/account/getBLANK2016/:ls', async (req, res)=> {
+router.get('/account/getBLANK2016/:ls/:code', async (req, res)=> {
     //Сначала ищем эту информацию у себя в базе
     //Сначала получим UID из л/с поставщика
-    var u = await (libs.execQuery(models.accountGetUID,[req.params.ls,39], global.pool_account));
-    const uid = u.rows[0].ls;
+    var kod_org = 39;
+    if (Boolean(req.params.code)!=false){
+        var kod_org = req.params.code;
+    }
 
-    const blank2016_count = await (libs.execQuery(models.accountBlank2016Count,[uid], global.pool_account));
+    var u = await (libs.execQuery(models.accountGetUID_ORG,[req.params.ls, kod_org], global.pool_account));
+    const uid = u.rows[0].uid;
+
+    const blank2016_count = await (libs.execQuery(models.accountBlank2016Count,[uid, kod_org], global.pool_account));
     //console.log(blank2016_count.rows[0].count);
     const row_count = blank2016_count.rows[0].count;
     if(row_count==0){
@@ -59,7 +64,7 @@ router.get('/account/getBLANK2016/:ls', async (req, res)=> {
         })    
     }else{
         //Если запись найдена выводим информацию из нашей базы
-        const bank2016_get = await libs.execQuery(models.accountBlank2016Get,[uid,39],pool_account);
+        const bank2016_get = await libs.execQuery(models.accountBlank2016Get,[uid,kod_org],pool_account);
         res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": bank2016_get.rows });
     }
 })
@@ -77,7 +82,7 @@ router.post('/account/byAcc', async (req, res) => {
         }
         //var url = 'http://85.238.97.144:3000/webload/'+req.body.account+'.0000000000.5';
        
-        uid = u.rows[0].ls;
+        uid = u.rows[0].uid;
        
 
         //пробуем получить данные с внешнего протокола
@@ -183,7 +188,7 @@ router.post('/account/getCalc', async (req, res) => {
     }
     //var url = 'http://85.238.97.144:3000/webload/'+req.body.account+'.0000000000.5';
    
-    uid = u.rows[0].ls;
+    uid = u.rows[0].uid;
 
     if (uid>0){ 
         //теперь получаем данные по uid
@@ -240,6 +245,20 @@ router.post('/account/findFIO', async (req, res)=>{
 
 }),
 
+router.post('/account/checkLS', async (req,res)=>{
+    var provider_id = 39;
+    if (Boolean(req.body.provider_id)!=false){
+        provider_id = req.body.provider_id;
+    }
+    var u = await (libs.execQuery(models.accountGetUID_ORG,[req.body.account, provider_id], global.pool_account));
+    if (u.rows[0].uid>0){ 
+        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
+    }else{
+        res.status(400).json({ "status": 400, "error": "Not find Abonent", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+
+    }
+
+}),
 function updateTSA(){
 
 }
