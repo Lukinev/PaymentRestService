@@ -6,11 +6,12 @@ module.exports = models = {
 		--to_char(t.DT, 'DD.MM.YYYY hh:mm:ss.ms') update_date, 
 		t.USLUGA as service_id,
 		t.id_period,
+		s.pl_o as SQ, 
 		u."name" as service_name,
 		--0 as id_counter, -- Если это прибор учета то отображается его номер, если нет счетчика то 0
 		--0 as previous_value, -- Если это прибор учета то отображаются предыдущие показания если нет прибора то 0
 		--0 as current_vulue, -- Если это прибор учета то отображаются текущие показания если нет прибора то 0
-		ls.FIO as fio  ,-- Фамилия И.О. абонента зарегистрированного за услугой поставщиком услуг
+		f.FIO as fio  ,-- Фамилия И.О. абонента зарегистрированного за услугой поставщиком услуг
 		t.sum_trf_ht as tarif, -- Тариф за оказанную услугу
 		t.sum_topay_ht+t.sum_topay_fw as sum_topay, -- Сумма к оплате
 		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
@@ -30,6 +31,7 @@ module.exports = models = {
 			left join public.street as str on str.np = s.street_nom 
 			left join public.viduslugi as u on u.id = t.usluga
 			left join public.bank as b on b.id = o.bank
+			left join public.fio as f on (f.uid = s.ls and f.period_id=(select max(id) from period p where p.id<=t.id_period))
 		
 		--where s.ls = $1 and t.id_period=(select id from period p where p."current"=true)
 		where s.ls = $1 and 
@@ -72,7 +74,7 @@ module.exports = models = {
 
 	accountShetaUpdate:{
 		name: 'sheta update',
-		text: 'UPDATE sheta SET fio=$1, k_lgot=$2, kp=$3, kp_jek=$4, pl_o=$5, a_close=$6, a_dem=$7 where ls=$8'
+		text: 'UPDATE sheta SET k_lgot=$2, kp=$3, kp_jek=$4, pl_o=$5, a_close=$6, a_dem=$7 where ls=$8'
 	},
 
 	//Получение единого лицевого счета из общей базы UID по организации
@@ -86,13 +88,14 @@ module.exports = models = {
 	accountGetUID: {
 		name:'account get UID',
 		required_fields: ['account'],
-		text: `select ls.ls uid, ls.kod_org, ls.name ls_org from ls_shet ls where ls.name = $1 and ls.kod_org = $2`
+		text: `select ls.ls uid, ls.kod_org, ls.name ls_org from ls_shet ls where ls.name = $1`
+		// and ls.kod_org = $2
 	},
 
 	//Количество записей бланков по л/с
 	accountBlank2016Count: {
 			name:'blank2016 get count',
-			text: 'select count(ls) from blank2016 b where b.ls = $1;'
+			text: 'select count(ls) from blank2016 b where b.ls = $1; '
 	},
 
 	accountBlank2016Insert:{
@@ -107,8 +110,8 @@ module.exports = models = {
 		name:'blank2016 get UID',
 		text: `select 
 				b.ADDR_ID,
-				l."name" as civ_code, 
-				l.fio civ_name,
+				f."name" as civ_code, 
+				f.fio civ_name,
 				(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 		 		b.sq,
 		 		b.sq_dom,
@@ -135,7 +138,8 @@ module.exports = models = {
   			from blank2016 b
 	  			left join sheta as s on s.ls = b.ls
 	  			left join ls_shet as l  on (l.ls=b.ls and l.kod_org=$2) 
-	  			left join public.street as str on str.np = s.street_nom 
+				  left join public.street as str on str.np = s.street_nom 
+				  left join public.fio as f on (f.uid = s.ls and f.period_id<=(select max(id) from period p where p."current"=true))
   			where b.ls=$1`
 	},
 
@@ -181,7 +185,9 @@ module.exports = models = {
 				left join period as p on p.id = t.id_period
 			where 
 				  t.ls=$1
-			order by t.id_period`
+				  and
+				  t.id_period<=(select id from period where period."current"=true)
+			order by t.id_period desc`
 	},
 
 	accountFindAddress:{
@@ -195,7 +201,7 @@ module.exports = models = {
 		s.pl_o SQ
 			from sheta s
 				left join ls_shet as l on (l.ls=s.ls and l.kod_org=$4)
-				left join s\treet as str on str.np = s.street_nom 
+				left join street as str on str.np = s.street_nom 
 			where 
   				(str."name" like $1 or str.name_u like $1)
   				and
@@ -233,7 +239,9 @@ module.exports = models = {
 			  order by fio, s.street_nom, s.home, s.korp, s.kv
 			  )sh
 			  where
-				  sh.fio like $1`
+				  sh.fio like $1
+			  limit 15
+			  `
 	}
 
 	

@@ -15,9 +15,10 @@ router.get('/account/getBLANK2016/:ls/:code', async (req, res)=> {
     }
 
     var u = await (libs.execQuery(models.accountGetUID_ORG,[req.params.ls, kod_org], global.pool_account));
+    if (Boolean(u.rows[0])){
     const uid = u.rows[0].uid;
 
-    const blank2016_count = await (libs.execQuery(models.accountBlank2016Count,[uid, kod_org], global.pool_account));
+    const blank2016_count = await (libs.execQuery(models.accountBlank2016Count,[uid], global.pool_account));
     //console.log(blank2016_count.rows[0].count);
     const row_count = blank2016_count.rows[0].count;
     if(row_count==0){
@@ -67,6 +68,7 @@ router.get('/account/getBLANK2016/:ls/:code', async (req, res)=> {
         const bank2016_get = await libs.execQuery(models.accountBlank2016Get,[uid,kod_org],pool_account);
         res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": bank2016_get.rows });
     }
+}else{res.status(400).json({ "status": 400, "error": "Not find Account", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });}
 })
 
 router.post('/account/byAcc', async (req, res) => {
@@ -76,7 +78,7 @@ router.post('/account/byAcc', async (req, res) => {
         if (Boolean(req.body.provider_id) == false)
         {
             u = await libs.execQuery(models.accountGetUID,[req.body.account], global.pool_account);
-            console.log("variable: 'provider_id' not find");
+            //console.log("variable: 'provider_id' not find");
         }else {
             u = await libs.execQuery(models.accountGetUID_ORG,[req.body.account, req.body.provider_id], global.pool_account);     
         }
@@ -186,7 +188,6 @@ router.post('/account/getCalc', async (req, res) => {
     }else {
         u = await libs.execQuery(models.accountGetUID_ORG,[req.body.account, req.body.provider_id], global.pool_account);     
     }
-    //var url = 'http://85.238.97.144:3000/webload/'+req.body.account+'.0000000000.5';
    
     uid = u.rows[0].uid;
 
@@ -206,17 +207,20 @@ router.post('/account/findAddress', async (req,res)=>{
         street = req.body.street;
         street=street.replace(/[^A-Za-zА-Яа-яЁё ]/g, "");
         street = '%'+street+'%';
-        console.log(street); 
+        //console.log(street); 
         var u = await (libs.execQuery(models.accountFindAddress,[street,req.body.home, req.body.kv, 39], global.pool_account));
-        if (u.rows[0].uid>0){ 
-            res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
+        if (Boolean(u.rows[0])){
+            if (u.rows[0].uid>0){ 
+                res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
+            }else{
+                res.status(400).json({ "status": 400, "error": "Not find Abonent", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+
+        }
         }else{
             res.status(400).json({ "status": 400, "error": "Not find Abonent", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
-
         }
     }else{
         res.status(400).json({ "status": 400, "error": "Size of street is small", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
-
     }
 }),
 
@@ -232,33 +236,48 @@ router.post('/account/findFIO', async (req, res)=>{
         fio = fio+'%';
         //console.log(fio); 
         var u = await (libs.execQuery(models.accountFinfFIO,[fio, provider_id], global.pool_account));
-        if (u.rows[0].uid>0){ 
-            res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
+
+        if (Boolean(u.rows[0])){
+            if (u.rows[0].uid>0){   
+                res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
+            }else{
+                res.status(400).json({ "status": 400, "error": "Not find Abonent", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+            }
+        
         }else{
-            res.status(400).json({ "status": 400, "error": "Not find Abonent", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
-
+            res.status(400).json({ "status": 400, "error": "Not Find FIO", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
         }
-    }else{
-        res.status(400).json({ "status": 400, "error": "Size of FIO is small", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
 
-    }
+    }else{
+            res.status(400).json({ "status": 400, "error": "Size of FIO is small ", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+        }
+
+    
 
 }),
 
 router.post('/account/checkLS', async (req,res)=>{
     var provider_id = 39;
+//    var datasetFalse = JSON.parse('{"check": false}');
     if (Boolean(req.body.provider_id)!=false){
         provider_id = req.body.provider_id;
     }
+    
     var u = await (libs.execQuery(models.accountGetUID_ORG,[req.body.account, provider_id], global.pool_account));
-    if (u.rows[0].uid>0){ 
-        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
+    var dataset = JSON.parse('{"check": '+Boolean(u.rows[0])+'}');
+    //console.log(u.rows[0]);
+    if (Boolean(u.rows[0])){
+        if (u.rows[0].uid>0){ 
+            res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), dataset, "datarow":u.rows});
+        }else{
+            res.status(400).json({ "status": 400, "error": "Not find account", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), dataset});
+        }   
     }else{
-        res.status(400).json({ "status": 400, "error": "Not find Abonent", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
-
+        res.status(400).json({ "status": 400, "error": "Not find account", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), dataset});
     }
 
 }),
+
 function updateTSA(){
 
 }
