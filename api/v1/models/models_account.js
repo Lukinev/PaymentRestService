@@ -11,9 +11,9 @@ module.exports = models = {
 		--0 as id_counter, -- Если это прибор учета то отображается его номер, если нет счетчика то 0
 		--0 as previous_value, -- Если это прибор учета то отображаются предыдущие показания если нет прибора то 0
 		--0 as current_vulue, -- Если это прибор учета то отображаются текущие показания если нет прибора то 0
-		f.FIO as fio  ,-- Фамилия И.О. абонента зарегистрированного за услугой поставщиком услуг
+		ls.FIO as fio  ,-- Фамилия И.О. абонента зарегистрированного за услугой поставщиком услуг
 		t.sum_trf_ht as tarif, -- Тариф за оказанную услугу
-		t.sum_topay_ht+t.sum_topay_fw as sum_topay, -- Сумма к оплате
+		t.saldok as sum_topay, -- Сумма к оплате
 		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 		s.ls as  uid, -- Единый номер лицевого счета
 		ls.name as account, -- лицевой счет поставщика услуг.
@@ -31,7 +31,7 @@ module.exports = models = {
 			left join public.street as str on str.np = s.street_nom 
 			left join public.viduslugi as u on u.id = t.usluga
 			left join public.bank as b on b.id = o.bank
-			left join public.fio as f on (f.uid = s.ls and f.period_id=(select max(id) from period p where p.id<=t.id_period))
+			--left join public.fio as f on (f.uid = s.ls and f.period_id=(select max(id) from period p where p.id<=t.id_period))
 		
 		--where s.ls = $1 and t.id_period=(select id from period p where p."current"=true)
 		where s.ls = $1 and 
@@ -226,7 +226,7 @@ module.exports = models = {
 			--s.kp PERS,
 			--s.pl_o SQ,
 			--t.id_period,'
-			t.sum_topay_ht+t.sum_topay_fw as sum_topay
+			t.saldok as sum_topay
 				from sheta s
 					left join ls_shet as l on (l.ls=s.ls and l.kod_org=$2)
 					left join street as str on str.np = s.street_nom 
