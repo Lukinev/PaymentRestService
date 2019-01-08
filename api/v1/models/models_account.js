@@ -8,12 +8,14 @@ module.exports = models = {
 		t.id_period,
 		s.pl_o as SQ, 
 		u."name" as service_name,
+		t.saldon as saldon, -- Сумма к оплате
 		--0 as id_counter, -- Если это прибор учета то отображается его номер, если нет счетчика то 0
 		--0 as previous_value, -- Если это прибор учета то отображаются предыдущие показания если нет прибора то 0
 		--0 as current_vulue, -- Если это прибор учета то отображаются текущие показания если нет прибора то 0
 		ls.FIO as fio  ,-- Фамилия И.О. абонента зарегистрированного за услугой поставщиком услуг
 		t.sum_trf_ht as tarif, -- Тариф за оказанную услугу
-		t.saldok as sum_topay, -- Сумма к оплате
+		t.saldon as saldon, -- Долг наначало периода
+		t.saldok as saldok, -- Сумма к оплате
 		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 		s.ls as  uid, -- Единый номер лицевого счета
 		ls.name as account, -- лицевой счет поставщика услуг.
@@ -226,7 +228,7 @@ module.exports = models = {
 			--s.kp PERS,
 			--s.pl_o SQ,
 			--t.id_period,'
-			t.saldok as sum_topay
+			t.saldok as saldok
 				from sheta s
 					left join ls_shet as l on (l.ls=s.ls and l.kod_org=$2)
 					left join street as str on str.np = s.street_nom 
