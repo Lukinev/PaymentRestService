@@ -15,6 +15,7 @@ module.exports = models = {
 		ls.FIO as fio  ,-- Фамилия И.О. абонента зарегистрированного за услугой поставщиком услуг
 		t.sum_trf_ht as tarif, -- Тариф за оказанную услугу
 		t.saldon as saldon, -- Долг наначало периода
+		t.sum_topay as SUM_TOPAY, --Начисленно
 		t.saldok as saldok, -- Сумма к оплате
 		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 		s.ls as  uid, -- Единый номер лицевого счета
@@ -112,7 +113,7 @@ module.exports = models = {
 		name:'blank2016 get UID',
 		text: `select 
 				b.ADDR_ID,
-				f."name" as civ_code, 
+				l."name" as civ_code, 
 				f.fio civ_name,
 				(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 		 		b.sq,
