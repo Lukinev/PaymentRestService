@@ -223,7 +223,7 @@ module.exports = models = {
 		name: 'sheta find FIO',
 		text: `select * from (select 
 			s.ls uid,
-			--l."name" CIV_CODE,
+			l."name" CIV_CODE,
 			l.fio FIO,
 			(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 			--s.kp PERS,
