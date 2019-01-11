@@ -215,8 +215,10 @@ module.exports = models = {
 				  s.a_close = 0	
 				and
 				  s.kp>0
-
- 		order by s.home, s.korp, s.kv`
+		
+		 order by s.home, s.korp, s.kv
+		 limit 15
+		 `
 	}, 
 
 	accountFinfFIO:{
