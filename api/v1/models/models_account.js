@@ -247,7 +247,19 @@ module.exports = models = {
 				  sh.fio like $1
 			  limit 15
 			  `
-	}
+	},
+
+	accountGetOrganization: {
+		name:'account get Organization',
+		required_fields: ['account'],
+		text: `select o.id, o."name", o.address, b.name bank_name, o.fio_dir, o.fio_glb, o.fone, o.ns, o.mfo, o.kod_okpo, o.mail_out from organization o
+		left join bank as b on b.id=o.bank
+			where
+			o.active=1`
+		// and ls.kod_org = $2
+	},
+
+
 
 	
 }

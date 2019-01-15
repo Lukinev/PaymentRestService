@@ -278,6 +278,17 @@ router.post('/account/checkLS', async (req,res)=>{
 
 }),
 
+router.post('/account/getOrganization',async (req,res)=>{
+    var u = await (libs.execQuery(models.accountGetOrganization,[], global.pool_account));
+    if (Boolean(u.rows[0])){
+        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), dataset, "dataset":u.rows}); 
+    }else{
+        
+        res.status(400).json({ "status": 400, "error": "Not find account", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset":null});
+    }
+
+})
+
 function updateTSA(){
 
 }
