@@ -279,9 +279,34 @@ router.post('/account/checkLS', async (req,res)=>{
 }),
 
 router.post('/account/getOrganization',async (req,res)=>{
-    var u = await (libs.execQuery(models.accountGetOrganization,[], global.pool_account));
+    var city = 16
+    if (Boolean(req.body.city)!=false){
+        city = req.body.city;
+    }
+    var u = await (libs.execQuery(models.accountGetOrganization,[city], global.pool_account));
     if (Boolean(u.rows[0])){
-        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), dataset, "dataset":u.rows}); 
+        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
+    }else{
+        
+        res.status(400).json({ "status": 400, "error": "Not find account", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset":null});
+    }
+
+}),
+
+
+router.post('/account/getLgot',async (req,res)=>{
+    var provider_id = 39;
+    var uid=0;
+    if (Boolean(req.body.provider_id)!=false){
+            provider_id = req.body.provider_id;
+    }
+    if (Boolean(req.body.uid)!=false){
+        uid = req.body.uid;
+}
+
+    var u = await (libs.execQuery(models.accountGetLgot,[provider_id, req.body.period_id, uid], global.pool_account));
+    if (Boolean(u.rows[0])&&(uid>0)){
+        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
     }else{
         
         res.status(400).json({ "status": 400, "error": "Not find account", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset":null});

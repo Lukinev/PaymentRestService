@@ -251,19 +251,35 @@ module.exports = models = {
 
 	accountGetOrganization: {
 		name:'account get Organization',
-		required_fields: ['account'],
-		text: `select o.id, o."name", o.address, b.name bank_name, o.fio_dir, o.fio_glb, o.fone, o.ns, o.mfo, o.kod_okpo, o.mail_out from organization o
+		required_fields: ['city'],
+		text: `select o.id, o."name", c."name" as city, o.address, b.name bank_name, o.fio_dir, o.fio_glb, o.fone, o.ns, o.mfo, o.kod_okpo, o.mail_out from organization o
 		left join bank as b on b.id=o.bank
-			where
-			o.active=1`
+		left join city as c on c.id=o.city
+	where
+	o.active=1
+	and
+	o.city = $1`
 		// and ls.kod_org = $2
 	},
+
+	accountGetLgot:{
+		name:'account get Lgot',
+		required_fields: ['id_provider, period_id, uid'],
+		text:`select p.uid, lg.name as lgot_name, p.priv_fio, p.priv_perc, p.pers, u."name" as usluga_name  from "privileges" p
+		--left join lgots as lg on lg.id=p.priv_code
+		left join viduslugi as u on u.id=p.usluga
+		left join lgots as lg on lg.id=p.priv_code
+	where
+	p.kod_org=$1
+	and
+	p.id_period=$2
+	and
+	p.uid=$3`
+	}
+
 
 
 
 	
 }
 
-/*
-
-*/
