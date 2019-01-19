@@ -94,6 +94,11 @@ module.exports = models = {
 		text: `select ls.ls uid, ls.kod_org, ls.name ls_org from ls_shet ls where ls.name = $1`
 		// and ls.kod_org = $2
 	},
+	//Проверка на существование UID 
+	accountCheckUID:{
+		name: 'accaunt check UID',
+		text: `select count(ls) from sheta where ls=$1`
+	},
 
 	//Количество записей бланков по л/с
 	accountBlank2016Count: {

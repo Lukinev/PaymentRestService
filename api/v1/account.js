@@ -293,7 +293,6 @@ router.post('/account/getOrganization',async (req,res)=>{
 
 }),
 
-
 router.post('/account/getLgot',async (req,res)=>{
     var provider_id = 39;
     var uid=0;
