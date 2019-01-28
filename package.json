@@ -9,14 +9,21 @@
     "body-parser": "^1.18.3",
     "compression": "^1.7.3",
     "cors": "^2.8.5",
+    "dbf": "^0.1.4",
+    "dbf-parser": "0.0.1",
+    "dbffile": "^0.7.5",
     "express": "^4.16.4",
     "express-promise-router": "^3.0.3",
     "fs": "0.0.1-security",
     "https": "^1.0.0",
+    "iconv": "^2.3.2",
+    "iconv-lite": "^0.4.24",
     "jsonwebtoken": "^8.3.0",
-    "moment": "^2.23.0",
-    "node-rest-client": "^3.1.0",
+    "moment": "^2.24.0",
+    "node-datetime": "^2.1.2",
+    "node-dbf": "^0.4.0",
     "pg": "^7.8.0",
-    "request": "^2.88.0"
+    "request": "^2.88.0",
+    "utf8": "^3.0.0"
   }
 }

@@ -1,10 +1,19 @@
 module.exports = models = {
+    
     paymentById: {
         name: 'payment by id',
         required_fields:[],
-        text: `SELECT p.id, p.amount, p.provider_id, p.service_id, p.created_at, p.payment_attribities
-        FROM public.payments p 
-        where p.id = $1`
+        text: `SELECT p.id, 
+		        p.amount, 
+		        p.provider_id, 
+                p.service_id, 
+                p.created_at,
+                p.createpay,
+                p.client_id,
+                p.uid,
+                p.storno_id
+            FROM public.payments p 
+                where p.id = $1`
     },
     
     
@@ -42,5 +51,21 @@ module.exports = models = {
         ],
         
         text:`insert into public.payments(uid, amount, service_id, provider_id, createpay, client_id) values ($1,$2,$3,$4,$5,$6) returning id, amount, created_at`
+     },
+
+     paymentNewStorno:{
+         name: 'create storno',
+         text: `insert into storno (data, summa, tip, id_pay )values($1, $2, $3, $4) RETURNING id`
+
+     },
+
+     paymentCheckStorno:{
+        name:'check strono',
+        text: 'select count(*) from storno where id_pay=$1'          
+     },
+
+     paymentSetStornoPay:{
+         name:'set storno pay',
+         text: 'update payments SET storno_id=$1 where id=$2'
      }
 }

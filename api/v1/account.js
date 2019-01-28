@@ -169,11 +169,29 @@ router.post('/account/byAcc', async (req, res) => {
 
         if (uid>0){ 
             //теперь получаем данные по uid
-            const r = await libs.execQuery(models.accountById, [uid], global.pool_account);
+            //const r = await libs.execQuery(models.accountById, [uid], global.pool_account);
+            const r = await libs.execQuery(models.accountByDATA, [uid], global.pool_account);
             res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
         }else
             res.status(400).json({ "status": 400, "error": "Not find UID", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
 });
+
+//Получение данных по UID
+router.post('/account/getUID', async (req, res) => {
+var uid = req.body.uid;
+console.log(uid);
+
+if (uid>0){
+        const r = await libs.execQuery(models.accountByDATA, [uid], global.pool_account);
+        //console.log(uid);
+        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
+    }
+    else
+    {
+        res.status(400).json({ "status": 400, "error": "Not find UID", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+    }
+
+})
 
 //Получение текущего стостояния абонента
 //аналог функции дениса getCalc

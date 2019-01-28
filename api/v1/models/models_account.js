@@ -13,7 +13,10 @@ module.exports = models = {
 		--0 as previous_value, -- Если это прибор учета то отображаются предыдущие показания если нет прибора то 0
 		--0 as current_vulue, -- Если это прибор учета то отображаются текущие показания если нет прибора то 0
 		ls.FIO as fio  ,-- Фамилия И.О. абонента зарегистрированного за услугой поставщиком услуг
-		t.sum_trf_ht as tarif, -- Тариф за оказанную услугу
+		CASE WHEN t.usluga = 3 THEN t.sum_trf_ht ELSE --если услуга тепло
+			case when t.usluga = 4 then t.sum_trf_fw else t.tarif --если горячая вода
+			end 
+		end tarif, -- если любая другая услуга
 		t.saldon as saldon, -- Долг наначало периода
 		t.sum_topay as SUM_TOPAY, --Начисленно
 		t.saldok as saldok, -- Сумма к оплате
@@ -46,6 +49,43 @@ module.exports = models = {
 		`
 	},
 	
+	accountByDATA:{
+		name: "account by DATA",
+		text:`select 
+		ls.usluga service_id, 
+		t.id_period, 
+		vu."name" service_name, 
+		t.saldon,  
+		ls.fio,
+	
+		CASE WHEN t.usluga = 3 THEN t.sum_trf_ht ELSE 
+			case when t.usluga=4 then t.sum_trf_fw else t.tarif --если горячая вода
+			end 
+		end tarif,
+		t.sum_topay,
+		t.saldok,
+		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+		s.ls uid,
+		ls."name" account,
+		o.id as provider_id,-- код поставщика услуг согласно справочника организаций (ORGANIZATION)*
+		o."name" as provider_name, -- Наименование организации поставщика услуг
+		o.mfo  as provider_mfo, -- МФО поставщика услуг
+		o.kod_okpo  as provider_okpo,-- ОКПО поставщика услуг
+		b.name_print provider_bank_name, -- Наименование банка поставщика услуг.
+		o.ns provider_bank_account
+		
+			from sheta s
+		left join ls_shet as ls on s.ls = ls.ls
+		left join public.organization as o on o.id = ls.kod_org
+		left join tsa as t on t.ls = s.ls and t.id_period = (select id from "period" p where p."current"=true and t.usluga=ls.usluga)
+		left join viduslugi as vu on ls.usluga = vu.id
+		left join public.street as str on str.np = s.street_nom 
+		left join public.bank as b on b.id = o.bank
+	where
+	s.ls = $1
+	order by vu.groups, ls.usluga`
+	},
+
 	accountCurrPeriod: {
 		name: 'period get current',
 		required_fields: [],
@@ -156,6 +196,7 @@ module.exports = models = {
 		text: `select 
 				p."Name" PERIOD_NAME,
 				t.id_period PERIOD_ID,
+				t.ls uid,
 				l."name" CIV_CODE,
 				t.dt REG_DATE,
 				l.fio CIV_NAME,
