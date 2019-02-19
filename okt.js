@@ -7,7 +7,7 @@
     //var iconv = Iconv('windows-1251', 'utf-8');
     var DBF_FILE = '_K0063_M.DBF';
     
-    encodingFunction = function (buffer, encoding) {
+    /*encodingFunction = function (buffer, encoding) {
         return iconv.decode(buffer, 'CP866').trim(); //CP1252....
         console.log(buffer);
     };
@@ -32,7 +32,9 @@
     });
     
     parser.parse();
-/*
+    */
+
+
      DBFFile.open(DBF_FILE)
 
     .then(dbf => {
@@ -44,14 +46,13 @@
    .then(rows => rows.forEach(
 //            row => console.log(iconv.encode(iconv.decode(row.FIO, "cp1251"), "utf8").toString())
             row => {
-                /let chunks = [];
+                //let chunks = [];
                 //chunks.push(row.FIO);
-                //console.log(utf8.encode(row.FIO));
-                let body = encodingFunction(row.FIO, 'CP866');//iconv.encode(iconv.decode(chunks, 'cp866'),'utf-8');
+                console.log(row.PLAT_CODE, row.FIO);
+                //let body = encodingFunction(row.FIO, 'CP866');//iconv.encode(iconv.decode(chunks, 'cp866'),'utf-8');
                 //console.log(body);
                               
             }
             //row => console.log(autoenc.detectEncoding(row.FIO).encoding)
             ))
         .catch(err => console.log('An error occurred: ' + err));
-*/

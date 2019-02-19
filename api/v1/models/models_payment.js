@@ -2,7 +2,7 @@ module.exports = models = {
     
     paymentById: {
         name: 'payment by id',
-        required_fields:[],
+        required_fields:['payment_id'],
         text: `SELECT p.id, 
 		        p.amount, 
 		        p.provider_id, 
@@ -11,12 +11,30 @@ module.exports = models = {
                 p.createpay,
                 p.client_id,
                 p.uid,
-                p.storno_id
+                p.storno_id,
+                p.pay_id_bank
             FROM public.payments p 
-                where p.id = $1`
+                where p.id = $1 and client_id=$2`
+    },
+
+    paymentGetPayIdBank: {
+        name: 'payment get pay_id_bank',
+        required_fields:['pay_id_bank'],
+        text: `SELECT p.id, 
+		        p.amount, 
+		        p.provider_id, 
+                p.service_id, 
+                p.created_at,
+                p.createpay,
+                p.client_id,
+                p.uid,
+                p.storno_id,
+                p.pay_id_bank
+            FROM public.payments p 
+                where p.pay_id_bank = $1 and client_id=$2`
     },
     
-    
+
     paymentNewPackage: {
         name: 'create new payment package',
         required_fields: 
@@ -50,7 +68,7 @@ module.exports = models = {
             "createpay",
         ],
         
-        text:`insert into public.payments(uid, amount, service_id, provider_id, createpay, client_id) values ($1,$2,$3,$4,$5,$6) returning id, amount, created_at`
+        text:`insert into public.payments(uid, amount, service_id, provider_id, createpay, client_id, pay_id_bank) values ($1,$2,$3,$4,$5,$6,$7) returning id, amount, created_at`
      },
 
      paymentNewStorno:{

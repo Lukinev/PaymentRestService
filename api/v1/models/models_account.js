@@ -131,8 +131,8 @@ module.exports = models = {
 	accountGetUID: {
 		name:'account get UID',
 		required_fields: ['account'],
-		text: `select ls.ls uid, ls.kod_org, ls.name ls_org from ls_shet ls where ls.name = $1`
-		// and ls.kod_org = $2
+		text: `select ls.ls uid, ls.kod_org, ls.name ls_org from ls_shet ls where ls.name = $1 and ls.kod_org = 39`
+		 
 	},
 	//Проверка на существование UID 
 	accountCheckUID:{
@@ -235,7 +235,10 @@ module.exports = models = {
 			where 
 				  t.ls=$1
 				  and
-				  t.id_period<=(select id from period where period."current"=true)
+					t.id_period<=(select id from period where period."current"=true)
+					and
+					l.kod_org=$2
+					
 			order by t.id_period desc`
 	},
 
@@ -321,6 +324,22 @@ module.exports = models = {
 	p.id_period=$2
 	and
 	p.uid=$3`
+	},
+
+	accountGetCounter:{
+		name:'account get counter',
+		text:`select c.uid, ls.name account, v."name" usluga, u.short_name, c.place_code, c.plase_name, c.wrk_number, c.mtype_name,
+					c.date_last old_data, c.data_last old_value 
+
+				from counters c
+				left join unitname as u on u.id=c.unit_id
+				left join viduslugi as v on v.id=c.usluga_id
+				left join ls_shet as ls on ls.ls=c.uid and ls.usluga=(CASE WHEN coalesce(c.usluga_id, 4) = 4 THEN 3 ELSE 3 END)
+
+				where
+					c.uid=$1
+		
+			order by c.kod_org, c.place_code`
 	}
 
 

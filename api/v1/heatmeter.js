@@ -68,12 +68,15 @@ router.post('/heatmeter/setParams', async (req, res) => {
 });
 
 router.post('/heatmeter/getHeatmeter', async (req, res) => {
+
         const r = await libs.execQuery(models.heatmeterGetHeatmeterSN, [req.body.sn], global.pool_heatmeter);
-        if (r.rows[0].id > 0) {
-            res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
-        } else
-            res.status(400).json({ "status": 400, "error": "Not find heatmeter: " + req.body.sn, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
-    
+       
+ 
+            if (r.rows.length>0) {
+                res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
+            } else
+                res.status(400).json({ "status": 400, "error": "Not find heatmeter: " + req.body.sn, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+        
 });
 
 router.post('/heatmeter/getId', async (req, res) => {
