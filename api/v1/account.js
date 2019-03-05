@@ -1,4 +1,4 @@
-const moment = require('moment'),
+    const moment = require('moment'),
     Router = require('express-promise-router'),
     router = new Router(),
     models = require('./models/models_account'),
@@ -72,281 +72,61 @@ router.get('/account/getBLANK2016/:ls/:code', async (req, res)=> {
 })
 
 
-router.post('/account/byAcc_test', async (req, res) => {
-    var uid;
+router.post('/account/byAcc', async (req, res) => {
+    var uid = 0;
     var u;
+    var provider_id =0;
      //Сначала получим UID из л/с поставщика
     if (Boolean(req.body.provider_id) == false)
     {
-        u = await libs.execQuery(models.accountGetUID,[req.body.account], global.pool_account);
-        //console.log("variable: 'provider_id' not find");
+//        u = await libs.execQuery(models.accountGetUID,[req.body.account], global.pool_account);
+        provider_id=39;
     }else {
-        u = await libs.execQuery(models.accountGetUID_ORG,[req.body.account, req.body.provider_id], global.pool_account);     
+        //u = await libs.execQuery(models.accountGetUID_ORG,[req.body.account, req.body.provider_id], global.pool_account);     
+        provider_id=req.body.provider_id;
     }
-    var url = 'http://85.238.97.144:3000/webload/'+req.body.account+'.0000000000.5';
-    
-    uid = u.rows[0].uid;
+    u = await libs.execQuery(models.accountGetUID_ORG,[req.body.account, provider_id], global.pool_account);     
+    if (u.rowCount>0){
+        //console.log(u.rows[0].uid);
+        uid = u.rows[0].uid;
+        await updateTGO(uid, req.body.account, provider_id);
+    } else
+        uid=0;
+
     //пробуем получить данные с внешнего протокола
-    request (url, async (error, response, body)=> {
-        
-        if (!error && response.statusCode === 200) {
-          const fbResponse = JSON.parse(body)
-          const dt = fbResponse['message'][0];
-          console.log(dt);
-          for(var i=0; i<dt.length; i++) {
-            //Проверяем есть ли такая запись в тса по лс периоду и коду организации
-            const tsa_count = await libs.execQuery(models.accountGetTsaCount,[req.body.account,dt[i]['PERIOD_ID'],req.body.kod_org], global.pool_account);
-            const row_count = tsa_count.rows[0].count;
-        
-
-            if(row_count==0){
-                //Тогда инсертим данные
-                var today = new Date();
-                var options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' };
-                /*const tsa_insert = await libs.execQuery(models.accountTsaInsert,[
-                        uid, //ls
-                        today.toLocaleDateString('ukl', options), //dt 
-                        dt[i]['CIV_CODE'], //ls_poluch
-                        dt[i]['PERS'], //kp
-                        req.body.kod_org, //kod_poluch
-                        3, //По умолчанию теплоснабжение //usluga
-                        dt[i]['SUM_TOPAY'], //suma_dolg
-                        dt[i]['SALDOK'],//nachisl
-                        dt[i]['SUM_TRF_HT'], //tarif
-                        dt[i]['SUM_PAY_SUBS'], //subsid
-                        dt[i]['PERIOD_ID'],//id_period
-                        dt[i]['SUM_TRF_FW'],
-                        dt[i]['SUM_TOPAY_HT'],
-                        dt[i]['SALDON'],
-                        dt[i]['SUM_TOPAY_FW'],
-                        dt[i]['SUM_PAY_BANK'],                            
-                        dt[i]['SUM_PAY_MPOM'],
-                        dt[i]['SUM_PAY_COMP'],
-                        dt[i]['SALDOK']
-                        ],
-                    global.pool_account);*/
-            }else{
-
-                /*{ PERIOD_ID: 201011,
-                    PERIOD_NAME: 'ноябрь 2010 г.',
-                    CIV_CODE: 2500875004,
-                    REG_DATE: '2006-11-01T00:00:00.000Z',
-                    CIV_NAME: 'Литвиненко Анна Иосифовна',
-                    ADDRESS: 'Люстдорфська дорога, д.123 корп. 2, кв.4',
-                    SERV_NAME: 'Отопление и горячая вода',
-                    PERS: 3,
-                    SQ: 62.31,
-                    A_CLOSE: 0,
-                    A_DEM: 0,
-                    SUM_TRF_HT: 2.7600000000000002,
-                    SUM_TOPAY_HT: 206.27,
-                    SUM_TRF_FW: 18.06,
-                    SUM_TOPAY_FW: 176.08,
-                    SALDON: 355.06,
-                    SUM_TOPAY: 382.35,
-                    SUM_PAY_BANK: 355.06,
-                    SUM_PAY_SUBS: 0,
-                    SUM_PAY_MPOM: 0,
-                    SUM_PAY_COMP: 0,
-                    SALDOK: 382.35,
-                    A_ACT_HW: 1,
-                    A_METR_HW: 0,
-                    A_ACT_HT: 1,
-                    A_METR_HT: 0,
-                    METER_ID: null,
-                    OBSL_NAME: null,
-                    OBSL_ID: null,
-                    PRIV_CNT: 1,
-                    A_PRIV: 1,
-                    A_INDB: 0 },
-                    */
-
-                //console.log(dt);
-                //Обновляем данные в sheta
-                /*
-                UPDATE sheta SET k_lgot=$2, kp=$3, kp_jek=$4, pl_o=$5, a_close=$6, a_dem=$7 where ls=$8'
-                const sheta_update  = libs.execQuery(models.accountShetaUpdate,
-                    [
-                        0,//'k_lgot'
-                        dt[i]['PERS'],//'kp'
-                        0,//'kp_jek'
-                        dt[i]['SQ'],//'pl_o'
-                        dt[i]['A_CLOSE'],//a_close
-                        dt[i]['A_DEM'],
-                        uid //Отбор по  этому значению
-                    ],global.pool_account);
-
-                const tsa_update = libs.execQuery(models.accountTsaUpdate,[
-                            dt[i]['PERS'],//kp=$1, 
-                            dt[i]['SUM_TOPAY'],//koplate=$2, 
-                            dt[i]['SALDOK'],//nachisl=$3, 
-                            0,//norm=$4, 
-                            0,//proc_lgo=$5, 
-                            0,//procent_lg=$6, 
-                            dt[i]['SUM_TOPAY'],//summa_dolg=$7,
-                            dt[i]['SUM_TRF_FW'],//tarif=$8, 
-                            3, //usluga=$9, 
-                            dt[i]['SUM_TRF_HT'], //sum_trf_ht=$10, 
-                            dt[i]['SUM_TOPAY_HT'], //sum_topay_ht=$11, 
-                            dt[i]['SALDON'],//saldon=$12, 
-                            dt[i]['SUM_TOPAY_FW'],//sum_topay_fw=$13, 
-                            dt[i]['SUM_PAY_BANK'], //sum_pay_bank=$14, 
-                            dt[i]['SUM_PAY_MPOM'],//sum_pay_mpom=$15, 
-                            dt[i]['SUM_PAY_COMP'],//sum_pay_comp=$16, 
-                            dt[i]['SALDOK'],//saldok=$17,
-                            /////////////////
-                            uid, //ls=$18 and 
-                            dt[i]['PERIOD_ID']//id_period=$19'
-                    ]
-                    ,global.pool_account);
-                    */
-            }
-
-        }
-
-        } else {
-          console.log("Error connect to Oracle: ", error, ", status code: ", response.statusCode)
-        } 
-    });
-    
-    
     if (uid>0){ 
         //теперь получаем данные по uid
-        //const r = await libs.execQuery(models.accountById, [uid], global.pool_account);
         const r = await libs.execQuery(models.accountByDATA, [uid], global.pool_account);
         res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
     }else
         res.status(400).json({ "status": 400, "error": "Not find UID", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
 });
 
-router.post('/account/byAcc', async (req, res) => {
-        var uid=0;
-        var u;
-        
-
-         //Сначала получим UID из л/с поставщика
-        if (Boolean(req.body.provider_id) == false)
-        {
-            u = await libs.execQuery(models.accountGetUID,[req.body.account], global.pool_account);
-            console.log("variable: accountGetUID");
-        }else {
-            u = await libs.execQuery(models.accountGetUID_ORG,[req.body.account, req.body.provider_id], global.pool_account);  
-            console.log("variable: accountGetUID_ORG");   
-        }
-        //var url = 'http://85.238.97.144:3000/webload/'+req.body.account+'.0000000000.5';
-        console.log(u.rowCount);
-        
-        if (u.rowCount>0){
-            uid = u.rows[0].uid;
-        } else
-            uid=0;
-        
-    
-
-        //пробуем получить данные с внешнего протокола
-
-        /*request (url, async (error, response, body)=> {
-            if (!error && response.statusCode === 200) {
-              const fbResponse = JSON.parse(body)
-              const dt = fbResponse['message'][0];
-              for(var i=0; i<dt.length; i++) {
-                //Проверяем есть ли такая запись в тса по лс периоду и коду организации
-                const tsa_count = await libs.execQuery(models.accountGetTsaCount,[req.body.account,dt[i]['PERIOD_ID'],req.body.kod_org], global.pool_account);
-                const row_count = tsa_count.rows[0].count;
-                if(row_count==0){
-                //Тогда инсертим данные
-                var today = new Date();
-                var options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' };
-                const tsa_insert = await libs.execQuery(models.accountTsaInsert,[
-                            uid, //ls
-                            today.toLocaleDateString('ukl', options), //dt 
-                            dt[i]['CIV_CODE'], //ls_poluch
-                            dt[i]['PERS'], //kp
-                            req.body.kod_org, //kod_poluch
-                            3, //По умолчанию теплоснабжение //usluga
-                            dt[i]['SUM_TOPAY'], //suma_dolg
-                            dt[i]['SALDOK'],//nachisl
-                            dt[i]['SUM_TRF_HT'], //tarif
-                            dt[i]['SUM_PAY_SUBS'], //subsid
-                            dt[i]['PERIOD_ID'],//id_period
-                            dt[i]['SUM_TRF_FW'],
-                            dt[i]['SUM_TOPAY_HT'],
-                            dt[i]['SALDON'],
-                            dt[i]['SUM_TOPAY_FW'],
-                            dt[i]['SUM_PAY_BANK'],                            
-                            dt[i]['SUM_PAY_MPOM'],
-                            dt[i]['SUM_PAY_COMP'],
-                            dt[i]['SALDOK']
-                            ],
-                        global.pool_account);
-                }else
-                {//Обновляем данные в sheta
-                    const sheta_update  = libs.execQuery(models.accountShetaUpdate,
-                        [
-                            dt[i]['CIV_NAME'], //'fio'
-                            0,//'k_lgot'
-                            dt[i]['PERS'],//'kp'
-                            0,//'kp_jek'
-                            dt[i]['SQ'],//'pl_o'
-                            dt[i]['A_CLOSE'],//a_close
-                            dt[i]['A_DEM'],
-                            uid //Отбор по  этому значению
-                        ],global.pool_account);
-                    const tsa_update = libs.execQuery(models.accountTsaUpdate,[
-                                dt[i]['PERS'],//kp=$1, 
-                                dt[i]['SUM_TOPAY'],//koplate=$2, 
-                                dt[i]['SALDOK'],//nachisl=$3, 
-                                0,//norm=$4, 
-                                0,//proc_lgo=$5, 
-                                0,//procent_lg=$6, 
-                                dt[i]['SUM_TOPAY'],//summa_dolg=$7,
-                                dt[i]['SUM_TRF_FW'],//tarif=$8, 
-                                3, //usluga=$9, 
-                                dt[i]['SUM_TRF_HT'], //sum_trf_ht=$10, 
-                                dt[i]['SUM_TOPAY_HT'], //sum_topay_ht=$11, 
-                                dt[i]['SALDON'],//saldon=$12, 
-                                dt[i]['SUM_TOPAY_FW'],//sum_topay_fw=$13, 
-                                dt[i]['SUM_PAY_BANK'], //sum_pay_bank=$14, 
-                                dt[i]['SUM_PAY_MPOM'],//sum_pay_mpom=$15, 
-                                dt[i]['SUM_PAY_COMP'],//sum_pay_comp=$16, 
-                                dt[i]['SALDOK'],//saldok=$17,
-                                /////////////////
-                                uid, //ls=$18 and 
-                                dt[i]['PERIOD_ID']//id_period=$19'
-                        ]
-                        ,global.pool_account);
-                }
-
-            }
-            } else {
-              console.log("Error connect to Oracle: ", error, ", status code: ", response.statusCode)
-            } 
-        });*/
-
-        if (uid>0){ 
-            //теперь получаем данные по uid
-            //const r = await libs.execQuery(models.accountById, [uid], global.pool_account);
-            const r = await libs.execQuery(models.accountByDATA, [uid], global.pool_account);
-            res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
-        }else
-            res.status(400).json({ "status": 400, "error": "Not find UID", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
-});
 
 //Получение данных по UID
 router.post('/account/getUID', async (req, res) => {
 var uid = req.body.uid;
-console.log(uid);
+let provider_id=39;
+if (Boolean(req.body.provider_id) == false)
+    {
+        provider_id=39;
+    }else {
+        provider_id=req.body.provider_id;
+    }
+
+
 
 if (uid>0){
-        const r = await libs.execQuery(models.accountByDATA, [uid], global.pool_account);
-        //console.log(uid);
-        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
+    let account =await libs.getAccount(uid,provider_id);    
+    let t = await updateTGO(uid, account, provider_id);
+    const r = await libs.execQuery(models.accountByDATA, [uid], global.pool_account);
+    //console.log(uid);
+    res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
     }
     else
     {
-        res.status(400).json({ "status": 400, "error": "Not find UID", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+    res.status(400).json({ "status": 400, "error": "Not find UID", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
     }
-
 })
 
 //Получение текущего стостояния абонента
@@ -355,7 +135,8 @@ router.post('/account/getCalc', async (req, res) => {
     var uid=0;
     var u;
     var provider_id=0;
-    console.log(req.body.account);
+    //console.log(req.body.account);
+    
      //Сначала получим UID из л/с поставщика
     if (Boolean(req.body.provider_id) == false)
     {
@@ -370,6 +151,7 @@ router.post('/account/getCalc', async (req, res) => {
 
     if (u.rowCount>0){
         uid = u.rows[0].uid;
+        await updateTGO(uid, req.body.account, provider_id);
     } else
         uid=0;
 
@@ -516,7 +298,99 @@ router.post('/account/getLgot',async (req,res)=>{
 
 })
 
-function updateTSA(){
+async function updateTGO(uid, account, provider_id){
+
+    var wrk_period = await libs.getWorkPeriod();
+
+   var url = 'http://85.238.97.144:3000/webload/'+account+'.'+wrk_period+'.6';
+
+        await request (url, async (error, response, body)=> {
+            //console.log(response.statusCode);
+            if (!error && response.statusCode === 200) {
+              const fbResponse = JSON.parse(body)
+              const dt = fbResponse['message'][0];
+              //Пока обновляем данные только по текущему и новому периоду
+    //          for(var i=0; i<2/*dt.length*/; i++) { //Первые 2 записи
+              for(var i=0; i<dt.length; i++) { //Первые 2 записи
+                    //Проверяем есть ли такая запись в тса по лс периоду и коду организации
+            
+                const tsa_count = await libs.execQuery(models.accountGetTsaCount,[uid,dt[i]['PERIOD_ID'],provider_id], global.pool_account);
+                const row_count = tsa_count.rows[0].count;
+                
+                if(row_count==0){
+                    //Тогда инсертим данные
+                    var today = new Date();
+                    var options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' };
+    
+                    const tsa_insert = await libs.execQuery(models.accountTsaInsert,[    
+                                            uid,
+                                            moment().format('DD.MM.YYYY hh:mm:ss.SSS'),
+                                            dt[i]["PERS"], 
+                                            provider_id,
+                                            3, //По умолчанию теплоснабжение //usluga
+                                            dt[i]["SUM_TRF_HT"], 
+                                            dt[i]["SUM_TOPAY_HT"],
+                                            dt[i]["SUM_TRF_FW"],
+                                            dt[i]["SUM_TOPAY_FW"],
+                                            dt[i]["SALDON"],
+                                            dt[i]["SUM_TOPAY"],
+                                            dt[i]["SUM_PAY_BANK"],
+                                            dt[i]["SALDOK"],
+                                            dt[i]["SUM_PAY_MPOM"],
+                                            dt[i]["SUM_PAY_COMP"], 
+                                            dt[i]["SUM_PAY_SUBS"],
+                                            dt[i]['PERIOD_ID']
+                                        ],
+                                            
+                                            global.pool_account);
+                }else{
+                    //console.log("UPDATE PERIOD "+dt[i]['PERIOD_ID']);
+    
+            
+                    //Обновляем данные в sheta
+                    //text: 'UPDATE sheta SET kp=$1, pl_o=$2, a_close=$3, a_dem=$4 where ls=$5'
+                    const sheta_update  = await libs.execQuery(models.accountShetaUpdate,
+                        [
+                            dt[i]['PERS'],//'kp'
+                            dt[i]['SQ'],//'pl_o'
+                            dt[i]['A_CLOSE'],//a_close
+                            dt[i]['A_DEM'],
+                            uid //Отбор по  этому значению
+                        ]
+                        ,global.pool_account);
+    
+                    
+            
+                    const tsa_update = await libs.execQuery(models.accountTsaUpdate,[
+                            dt[i]['PERS'],//kp=$1, +
+                            dt[i]['SUM_TOPAY'],//koplate=$2, +
+                            dt[i]['SALDON'],//nachisl=$3, +                            0,//norm=$4, 
+                            dt[i]['SUM_TOPAY'],//summa_dolg=$4,
+                            dt[i]['SUM_TRF_FW'],//tarif=$5, 
+                            3, //usluga=$6, 
+                            dt[i]['SUM_TRF_HT'], //sum_trf_ht=$7, 
+                            dt[i]['SUM_TOPAY_HT'], //sum_topay_ht=$8, 
+                            dt[i]['SALDON'],//saldon=$9, 
+                            dt[i]['SUM_TOPAY_FW'],//sum_topay_fw=$10, 
+                            dt[i]['SUM_PAY_BANK'], //sum_pay_bank=$11, 
+                            dt[i]['SUM_PAY_MPOM'],//sum_pay_mpom=$12, 
+                            dt[i]['SUM_PAY_COMP'],//sum_pay_comp=$13, 
+                            dt[i]['SALDOK'],//saldok=$14,+
+                            /////////////////
+                            uid, //ls=$15 and 
+                            dt[i]['PERIOD_ID']//id_period=$16'
+                        ]
+                        ,global.pool_account);
+                        
+                }
+            }
+        
+            } else {
+              console.log("Error connect to Oracle: ");
+            } 
+    
+        });
+        
 
 }
 

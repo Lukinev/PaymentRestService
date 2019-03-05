@@ -1,4 +1,5 @@
 module.exports = models = {
+
     accountById: {
 		name: 'account debt by id',
 		required_fields: ['account'],
@@ -62,7 +63,7 @@ module.exports = models = {
 			case when t.usluga=4 then t.sum_trf_fw else t.tarif --если горячая вода
 			end 
 		end tarif,
-		t.sum_topay,
+		t.sum_pay_bank SUM_PAY_BANK,
 		t.saldok,
 		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 		s.ls uid,
@@ -75,12 +76,13 @@ module.exports = models = {
 		o.ns provider_bank_account
 		
 			from sheta s
-		left join ls_shet as ls on s.ls = ls.ls
-		left join public.organization as o on o.id = ls.kod_org
-		left join tsa as t on t.ls = s.ls and t.id_period = (select id from "period" p where p."current"=true and t.usluga=ls.usluga)
-		left join viduslugi as vu on ls.usluga = vu.id
-		left join public.street as str on str.np = s.street_nom 
-		left join public.bank as b on b.id = o.bank
+			left join tsa as t on t.ls = s.ls and t.id_period = (select max(t1.id_period) from tsa t1 where t1.ls=t.ls) --p."current"=true or p.works=true) 
+			left join ls_shet as ls on s.ls = ls.ls and ls.kod_org=t.kod_poluch and ls.usluga=t.usluga
+			left join public.organization as o on o.id = ls.kod_org
+			left join viduslugi as vu on ls.usluga = vu.id
+			left join public.street as str on str.np = s.street_nom 
+			left join public.bank as b on b.id = o.bank
+
 	where
 	s.ls = $1
 	order by vu.groups, ls.usluga`
@@ -93,32 +95,45 @@ module.exports = models = {
 
 	},
 
+	accountWorkPeriod: {
+		name: 'period get work',
+		required_fields: [],
+		text: 'select id from period p where p.works=true'
+
+	},
+
 	accountGetTsaCount:{
 		name: 'tsa get period_id',
-		required_fields: ['ls_poluch', 'id_period, kod_poluch'],
-		text: 'select count(t.np) from tsa t where t.ls_poluch=$1 and t.id_period=$2 and kod_poluch=$3'
+		required_fields: ['uid', 'id_period, kod_poluch'],
+		text: 'select count(t.np) from tsa t	where ' 
+					+'t.ls=$1 and t.id_period=$2 and kod_poluch=$3'
 	},
 
 	accountTsaUpdate:{
 		name: 'tsa update',
-		text: 'UPDATE public.tsa SET kp=$1, koplate=$2, nachisl=$3, norm=$4, proc_lgo=$5, procent_lg=$6, summa_dolg=$7, '+
-					'tarif=$8, usluga=$9, sum_trf_ht=$10, sum_topay_ht=$11, saldon=$12, sum_topay_fw=$13, '+ 
-					'sum_pay_bank=$14, sum_pay_mpom=$15, sum_pay_comp=$16, saldok=$17'+
-				'where ls=$18 and id_period=$19'
+		text: 'UPDATE public.tsa SET kp=$1, koplate=$2, nachisl=$3, sum_topay=$4, '+
+							'tarif=$5, usluga=$6, sum_trf_ht=$7, sum_topay_ht=$8, saldon=$9, sum_topay_fw=$10, '+ 
+							'sum_pay_bank=$11, sum_pay_mpom=$12, sum_pay_comp=$13, saldok=$14'+
+							'where ls=$15 and id_period=$16'
 	},
 	accountTsaInsert:{
 		name: 'tsa insert',
-		text: 'INSERT INTO TSA (ls, dt,ls_poluch, kp, kod_poluch, usluga, summa_dolg, nachisl, tarif, subsid, id_period, '+
-					' SUM_TRF_HT, SUM_TOPAY_HT, SALDON, SUM_TOPAY_FW, SUM_PAY_BANK, SUM_PAY_MPOM, SUM_PAY_COMP, SALDOK'+
-				') VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, '+
-				'$12, $13, $14, $15, $16, $17, $18, $19'+
-			')'
+		text: `INSERT INTO TSA (ls, dt, kp, kod_poluch, usluga, 
+						sum_trf_ht, SUM_TOPAY_HT, sum_trf_fw, SUM_TOPAY_FW, SALDON, SUM_TOPAY, SUM_PAY_BANK, SALDOK ,
+						SUM_PAY_MPOM, SUM_PAY_COMP, subsid, id_period) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`
 	},
 
 	accountShetaUpdate:{
 		name: 'sheta update',
-		text: 'UPDATE sheta SET k_lgot=$2, kp=$3, kp_jek=$4, pl_o=$5, a_close=$6, a_dem=$7 where ls=$8'
+		text: 'UPDATE sheta SET kp=$1, pl_o=$2, a_close=$3, a_dem=$4 where ls=$5'
 	},
+
+		//Получение лицевого счета организации по uid
+	accountGetACCOUNT_ORG: {
+			name:'get account for provider_id',
+			required_fields: ['uid', 'provider_id'],
+			text: `select ls.ls uid, ls.kod_org, ls.name ls_org from ls_shet ls where ls.ls = $1 and ls.kod_org= $2`
+		},
 
 	//Получение единого лицевого счета из общей базы UID по организации
 	accountGetUID_ORG: {
@@ -136,7 +151,7 @@ module.exports = models = {
 	},
 	//Проверка на существование UID 
 	accountCheckUID:{
-		name: 'accaunt check UID',
+		name: 'account check UID',
 		text: `select count(ls) from sheta where ls=$1`
 	},
 
@@ -234,8 +249,8 @@ module.exports = models = {
 				left join period as p on p.id = t.id_period
 			where 
 				  t.ls=$1
-				  and
-					t.id_period<=(select id from period where period."current"=true)
+				  --and
+					--t.id_period<=(select id from period where works."current"=true)
 					and
 					l.kod_org=$2
 					
@@ -340,11 +355,8 @@ module.exports = models = {
 					c.uid=$1
 		
 			order by c.kod_org, c.place_code`
-	}
+	},
 
 
-
-
-	
 }
 

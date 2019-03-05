@@ -40,8 +40,15 @@ router.get('/heatmeter/setParams', async (req, res) => {
 
 router.post('/heatmeter/setParams', async (req, res) => {
     var id_heatmeter = 0;
-            const h = await libs.execQuery(models.heatmeterGetId, [req.body.sn], global.pool_heatmeter);
-            id_heatmeter = h.rows[0].id;
+        if(Boolean(req.body.sn)==true){
+            let h = await libs.execQuery(models.heatmeterGetId, [req.body.sn], global.pool_heatmeter)
+            if (Boolean(h.rows)==true)
+                {id_heatmeter = h.rows[0].id;}
+            else
+                {console.log("NOT FIND SN: "+req.body.sn)}
+        }else{console.log("ERROR BODY: "+req.body)}
+        
+
         if (id_heatmeter > 0) {
             const r = await libs.execQuery(models.heatmeterSetPararams, [req.body.client_id,
             id_heatmeter,

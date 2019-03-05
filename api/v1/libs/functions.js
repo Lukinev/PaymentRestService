@@ -1,12 +1,33 @@
 const moment = require('moment'),
-        model_account = require('../models/models_account');
-
+model_account = require('../models/models_account');
 
 async function execQuery(model, params, connection) {
-
     return connection.query(model, params); // returns result of query using pool connect from params "connection"
 }
 
+async function getWorkPeriod(){ 
+    let u = await global.pool_account.query(model_account.accountWorkPeriod);  
+    res = u.rows[0].id;
+    return res;
+}
+
+async function getCurrPeriod(){ 
+    let u = await global.pool_account.query(model_account.accountCurrPeriod);  
+    res = u.rows[0].id;
+    return res;
+}
+
+async function getAccount(uid, id_provider){ 
+    let u = await global.pool_account.query('select name account from ls_shet ls where ls.ls=$1 and ls.kod_org = $2',[uid, id_provider]);  
+    res = u.rows[0].account;
+    return res;
+}
+
+async function getUid(account, id_provider){ 
+    let u = await global.pool_account.query('select ls uid from ls_shet ls where ls."name"=$1 and ls.kod_org = $2',[account, id_provider]);  
+    res = u.rows[0].account;
+    return res;
+}
 // func cheked income data by pattern
 // incomeParams = {requiredFields:[], request:[]}
 async function checkRequestObjectPattern(incomeParams) {
@@ -59,4 +80,14 @@ async function checkPAY(body){
     return {res : res, err : err};
 }
 
-module.exports = { execQuery, checkRequestObjectPattern, checkUID, checkAmount}
+module.exports = { 
+    
+    execQuery, 
+    checkRequestObjectPattern, 
+    checkUID, 
+    checkAmount,
+    getWorkPeriod,
+    getCurrPeriod,
+    getAccount,
+    getUid
+ }
