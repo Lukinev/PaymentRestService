@@ -1,10 +1,10 @@
-    const moment = require('moment'),
-    Router = require('express-promise-router'),
-    router = new Router(),
-    models = require('./models/models_account'),
-    { checkJWT } = require('./libs/auth'),
-    libs = require('./libs/functions');
-    var request = require('request');
+const moment = require('moment'),
+Router = require('express-promise-router'),
+router = new Router(),
+models = require('./models/models_account'),
+{ checkJWT } = require('./libs/auth'),
+libs = require('./libs/functions');
+var request = require('request');
 
 router.get('/account/getBLANK2016/:ls/:code', async (req, res)=> {
     //Сначала ищем эту информацию у себя в базе
