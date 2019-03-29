@@ -76,6 +76,8 @@ module.exports = models = {
         text:`insert into public.payments(uid, amount, service_id, provider_id, createpay, client_id, pay_id_bank) values ($1,$2,$3,$4,$5,$6,$7) returning id, amount, created_at`
      },
 
+
+
      paymentNewStorno:{
          name: 'create storno',
          text: `insert into storno (data, summa, tip, id_pay )values($1, $2, $3, $4) RETURNING id`

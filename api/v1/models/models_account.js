@@ -343,7 +343,7 @@ module.exports = models = {
 
 	accountGetCounter:{
 		name:'account get counter',
-		text:`select c.uid, ls.name account, v."name" usluga, u.short_name, c.place_code, c.plase_name, c.wrk_number, c.mtype_name,
+		text:`select c.uid, ls.name account, c.usluga_id, v."name" usluga, u.short_name, c.place_code, c.plase_name, c.wrk_number, c.mtype_name,
 					c.date_last old_data, c.data_last old_value 
 
 				from counters c
@@ -355,6 +355,13 @@ module.exports = models = {
 					c.uid=$1
 		
 			order by c.kod_org, c.place_code`
+	},
+
+	accountSetParamCounter:{
+			name:'create new values counter',
+			text:`INSERT INTO counterval
+			(id_period, uid, account, placecode, date_prev, start_val, date_curr, new_val, unit, serv, meter_id, link_id, load_id, notes)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) returning id`
 	},
 
 

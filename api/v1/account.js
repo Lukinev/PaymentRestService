@@ -102,7 +102,6 @@ router.post('/account/byAcc', async (req, res) => {
         res.status(400).json({ "status": 400, "error": "Not find UID", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
 });
 
-
 //Получение данных по UID
 router.post('/account/getUID', async (req, res) => {
 var uid = req.body.uid;
@@ -261,6 +260,11 @@ router.post('/account/getCounter',async (req,res)=>{
         res.status(400).json({ "status": 400, "error": "Not find counter", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset":null});
     }
 
+}),
+
+router.post('/account/setParamCounter', async(req,res)=>{
+    var uid=0;
+    
 }),
 
 router.post('/account/getOrganization',async (req,res)=>{

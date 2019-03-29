@@ -50,6 +50,8 @@ router.post('/payment/create_pack', async (req, res) => {
     
 });
 
+//router.post('/payment/counter')
+
 router.post('/payment/create', async (req, res) => {
     var st= await checkJWT(req.body);
     var pay_id_bank = 0;
