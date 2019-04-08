@@ -96,6 +96,8 @@ router.post('/account/byAcc', async (req, res) => {
     //пробуем получить данные с внешнего протокола
     if (uid>0){ 
         //теперь получаем данные по uid
+        console.log("byAcc: "+req.body.account);
+
         const r = await libs.execQuery(models.accountByDATA, [uid], global.pool_account);
         res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
     }else
@@ -118,6 +120,7 @@ if (Boolean(req.body.provider_id) == false)
 if (uid>0){
     let account =await libs.getAccount(uid,provider_id);    
     let t = await updateTGO(uid, account, provider_id);
+    console.log("getUID: "+uid+", "+account);
     const r = await libs.execQuery(models.accountByDATA, [uid], global.pool_account);
     //console.log(uid);
     res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
@@ -175,6 +178,7 @@ router.post('/account/findAddress', async (req,res)=>{
         var u = await (libs.execQuery(models.accountFindAddress,[street,req.body.home, req.body.kv, 39], global.pool_account));
         if (Boolean(u.rows[0])){
             if (u.rows[0].uid>0){ 
+                console.log("findAddress: "+u.rows[0].uid);
                 res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
             }else{
                 res.status(400).json({ "status": 400, "error": "Not find Abonent", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
@@ -203,6 +207,8 @@ router.post('/account/findFIO', async (req, res)=>{
 
         if (Boolean(u.rows[0])){
             if (u.rows[0].uid>0){   
+                console.log("findFIO "+fio+", "+u.rows[0].uid);
+
                 res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
             }else{
                 res.status(400).json({ "status": 400, "error": "Not find Abonent", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
@@ -232,6 +238,7 @@ router.post('/account/checkLS', async (req,res)=>{
     //console.log(u.rows[0]);
     if (Boolean(u.rows[0])){
         if (u.rows[0].uid>0){ 
+            console.log("checkLS "+u.rows[0].uid+", "+req.body.account);
             res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), dataset, "datarow":u.rows});
         }else{
             res.status(400).json({ "status": 400, "error": "Not find account", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), dataset});
@@ -243,11 +250,12 @@ router.post('/account/checkLS', async (req,res)=>{
 }),
 
 router.post('/account/getCounter',async (req,res)=>{
-    //var provider_id = 39;
+//    var provider_id = 39;
     var uid=0;
     /*if (Boolean(req.body.provider_id)!=false){
             provider_id = req.body.provider_id;
     }*/
+
     if (Boolean(req.body.uid)!=false){
         uid = req.body.uid;
     }
@@ -264,7 +272,38 @@ router.post('/account/getCounter',async (req,res)=>{
 
 router.post('/account/setParamCounter', async(req,res)=>{
     var uid=0;
-    
+    var provider_id = 39;
+    var account ="0";
+    if (Boolean(req.body.uid)!=false){
+        uid = req.body.uid;
+        
+    }
+    if (Boolean(req.body.provider_id)!=false){
+        provider_id = req.body.provider_id;
+    }
+    account = await libs.getAccount(uid, provider_id);
+    //console.log(account);
+
+    var u = await (libs.execQuery(models.accountSetParamCounter,[
+                        await libs.getCurrPeriod(), 
+                        uid, 
+                        account,
+                        req.body.usluga_id,
+                        req.body.provider_id, 
+                        req.body.placecode, 
+                        req.body.date_curr, 
+                        req.body.new_val,
+                        req.body.notes,
+                        req.body.client_id
+                    ], global.pool_payment));
+
+    if (Boolean(u.rows[0])&&(uid>0)){
+        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
+    }else{
+    //(id_period, uid, account, placecode, date_prev, start_val, date_curr, new_val, unit, serv, meter_id, link_id, load_id, notes)
+    res.status(400).json({ "status": 400, "error": "Not registred values", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset":null});
+    }
+
 }),
 
 router.post('/account/getOrganization',async (req,res)=>{
@@ -309,12 +348,10 @@ async function updateTGO(uid, account, provider_id){
    var url = 'http://85.238.97.144:3000/webload/'+account+'.'+wrk_period+'.6';
 
         await request (url, async (error, response, body)=> {
-            //console.log(response.statusCode);
+            
             if (!error && response.statusCode === 200) {
               const fbResponse = JSON.parse(body)
               const dt = fbResponse['message'][0];
-              //Пока обновляем данные только по текущему и новому периоду
-    //          for(var i=0; i<2/*dt.length*/; i++) { //Первые 2 записи
               for(var i=0; i<dt.length; i++) { //Первые 2 записи
                     //Проверяем есть ли такая запись в тса по лс периоду и коду организации
             

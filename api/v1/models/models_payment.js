@@ -97,17 +97,22 @@ module.exports = models = {
 
      paymentGetNotSendPay:{
          name:'get not send pay',
-         text:`select * from payments p
-                where
-                p.storno_id=0
-                and
-                p.pay_id_tgo=0
-                and
-                p.pay_id_bank>0`
+            text:`select * from payments p
+                    where
+                    p.storno_id=0
+                    and
+                    p.pay_id_tgo=0
+                    and
+                    p.pay_id_bank>0`
      },
 
      paymentSetPayTGO:{
         name:'set pay tgo',
         text: 'update payments SET pay_id_tgo=$2 where id=$1'
     },
+
+    paymentSetBankID:{
+        name: 'set bank id',
+        text:'update payments SET pay_id_bank=$2 where id=$1 and client_id=$3 RETURNING pay_id_bank'
+    }
 }

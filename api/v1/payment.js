@@ -45,7 +45,7 @@ router.post('/payment/create_pack', async (req, res) => {
 
         }
     }else{
-        res.status(400).json({ "status": 400, "error": "Bad autorized token", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+        res.status(400).json({ "status": 400, "error": "Bad autorized token", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": st.status });
     }
     
 });
@@ -55,13 +55,9 @@ router.post('/payment/create_pack', async (req, res) => {
 router.post('/payment/create', async (req, res) => {
     var st= await checkJWT(req.body);
     var pay_id_bank = 0;
-//    console.log(st.status);
+    //console.log(req.body);
     if (st.status==200) 
     {
-        // if (req.body.package_id ===&& typeof (req.body.client_id) === 'number') {
-        //const r = await libs.execQuery(models.paymentNewPackage, [req.body.terminal_id, req.body.service_id, req.body.amount], global.pool_payment);
-        //var u = await (libs.execQuery(model_account.accountCheckUID,[req.body.uid], global.pool_account));
-                //var cnt = u.rows[0].count;
                 if ((await libs.checkUID(req.body.uid))==false){
                     res.status(400).json({ "status": 400, "error": "Error uid", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
                 }else if (req.body.amount<=0){
@@ -92,7 +88,7 @@ router.post('/payment/create', async (req, res) => {
                 res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows});
                 }
     } else
-        res.status(400).json({ "status": 400, "error": "Bad autorized token", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+        res.status(400).json({ "status": 400, "error": "Bad autorized token", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "token": st.status });
     
 });
 
@@ -170,6 +166,23 @@ router.post('/payment/setStorno', async (req,res)=>{
     res.status(400).json({ "status": 400, "error": "Bad autorized token", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
 });
 
+router.post('/payment/setPayIdBank', async(req,res)=>{
+    var st= await checkJWT(req.body);
+    if (st.status==200) 
+    { 
+        const pay = await libs.execQuery(models.paymentSetBankID, [req.body.payment_id ,req.body.pay_id_bank, req.body.client_id ], global.pool_payment);
+        console.log(pay.rows[0]);
+       if (Boolean(pay.rows[0])){
+        console.log("fix pay "+req.body.client_id+", "+pay.rows);
+        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": pay.rows });
+       }else{
+        res.status(400).json({ "status": 400, "error": "Not find pay", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+       }
+    }else{
+        res.status(400).json({ "status": 400, "error": "Bad autorized token", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "token": st.status });
+   }
+})
+
 //Выбор записей не переданных в ТГО
 async function selectNotSendTGO() {
     //Выбираем все записе не отправленные в биллинг
@@ -188,7 +201,7 @@ async function selectNotSendTGO() {
         }
     }
     else{
-        console.log("notfind unregistered pay");
+        console.log("notfind unregistered pay:"+res.rows[i].id);
     }    
 }
 
@@ -221,40 +234,19 @@ async function sendPayTGO(payid, uid, payidbank, amount, dt, client_id, provider
 
         json: true // Automatically stringifies the body to JSON
     };
-    //console.log(options.body);
-    //console.log(test);
     if (test==0){ 
-        //console.log("WORKING");       
         await rp(options)
         .then(async function (body) {
             await fixPayTGO(payid, body.pay_tgo);
-            //console.log(payid+": "+body.pay_tgo);
         })
         .catch(function (err) {
             console.log(err);
             return;
-            
         });
-    /*await request({
-        url: options.uri,
-        json: true,
-        method: options.method,
-        headers: {
-            "content-type": "application/json",
-        },
-        body: options.body//JSON.stringify(options.body)
-    }, async function(error, response, body) {
-        if (error){
-            console.log(err);
-            return;
-        await fixPayTGO(payid, body.pay_tgo);
-        
-    });*/
     }else{
         //console.log("TEST BANK NOD LOAD FROM BILLING");
         fixPayTGO(payid, -99);
-    }
-    
+    }    
 };
 
 async function fixPayTGO(payid, pay_id_tgo) {

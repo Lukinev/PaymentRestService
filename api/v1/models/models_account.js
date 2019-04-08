@@ -360,8 +360,9 @@ module.exports = models = {
 	accountSetParamCounter:{
 			name:'create new values counter',
 			text:`INSERT INTO counterval
-			(id_period, uid, account, placecode, date_prev, start_val, date_curr, new_val, unit, serv, meter_id, link_id, load_id, notes)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) returning id`
+			(id_period, uid, account, usluga_id, provider_id, placecode, date_curr, new_val, notes, client_id)
+
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning id`
 	},
 
 
