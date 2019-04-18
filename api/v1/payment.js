@@ -183,15 +183,18 @@ router.post('/payment/setPayIdBank', async(req,res)=>{
    }
 })
 
-router.post('/payment/delPayIdTGO', async(req,res)=>{
+router.post('/payment/delPayTGO', async(req,res)=>{
     var st= await checkJWT(req.body);
     if (st.status==200) 
     { 
-        const pay = await libs.execQuery(models.paymentSetBankID, [req.body.payment_id ,req.body.pay_id_tgo, req.body.client_id ], global.pool_payment);
-        console.log(pay.rows[0]);
+//        const pay = await libs.execQuery(models.paymentGetPayTGO, [req.body.payment_id, req.body.client_id ], global.pool_payment);
+        const pay = await libs.execQuery(models.paymentGetPayTGO, [req.body.payment_id ], global.pool_payment);
+
        if (Boolean(pay.rows[0])){
-        //console.log("fix pay "+req.body.client_id+", "+pay.rows);
-        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": pay.rows });
+            if ((pay.rows[0].pay_id_tgo)>0){
+                var d = await deletePayTGO(pay.rows[0].pay_id_tgo);
+                res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "deleted": req.body.payment_id});
+            }
        }else{
         res.status(400).json({ "status": 400, "error": "Not find pay", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
        }
@@ -235,6 +238,12 @@ router.post('/payment/setPayIdEasy', async(req,res)=>{
        }
 })
 
+
+router.post('/payment/sendNotFixPay', async(req,res)=>{
+    await selectNotSendTGO();
+    res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "FIX": "OK" });
+    
+})
 //Выбор записей не переданных в ТГО
 async function selectNotSendTGO() {
     //Выбираем все записе не отправленные в биллинг
@@ -259,7 +268,7 @@ async function selectNotSendTGO() {
     }    
 }
 
-async function deletePayTGO(pay_id_tgo){
+async function deletePayTGO(payment_id,pay_id_tgo){
     var options = {
         method: 'POST',
         //1 удалилось, 0 - уже удалено, -1 платеж не найден
@@ -275,9 +284,14 @@ async function deletePayTGO(pay_id_tgo){
         json: true // Automatically stringifies the body to JSON
     };
         await rp(options)
-        .then(async function (body) {
-            const er = await fixPayTGO(payid, -99);
+        .then(async function (body, result) {
+            if (body.pay_tgo===1){
+            await fixPayTGO(payment_id, -99);
+            result = body.pay_tgo;
+            return result;
             //await fixPayTGO(payid, body.pay_tgo);
+            }else {console.log(" pay_id="+payment_id+" not del pay_id_tgo="+pay_id_tgo+", error="+ body.pay_tgo);
+        }
         })
         .catch(function (err) {
             //console.err(err);
@@ -292,21 +306,21 @@ async function sendPayTGO(payid, uid, payidbank, amount, dt, client_id, provider
     //console.log(b.rows[0].test);
     //получить account из uid
     const acc = await libs.getAccount(uid ,provider_id);//await libs.execQuery(model_account.accountGetACCOUNT_ORG,[uid,provider_id],global.pool_account);
-    console.log(acc);
+    console.log("sendPayTGO: "+acc);
     //Узнаем находится ли клиент в тесте
     var test = 1;
     var src = 0;
     var tgo=0;
 
-    if (Boolean(b.rows[0].test)){
-        test = b.rows[0].test;}
 
-    if (Boolean(b.rows[0].source_id)){
-        src = b.rows[0].source_id;}
-
-    if (Boolean(b.rows[0].id_tgo)){
-        tgo=b.rows[0].id_tgo;}
-
+    if (Boolean(b.rows[0])){
+        test = b.rows[0].test;
+        src = b.rows[0].source_id;
+        tgo=b.rows[0].id_tgo;
+    }else{
+        console.log("Error getBankTGO: "+b.rows);
+    }
+        
     pay_bank_id = payidbank.toString();
     var options = {
         method: 'POST',
@@ -322,12 +336,14 @@ async function sendPayTGO(payid, uid, payidbank, amount, dt, client_id, provider
             "sources":src
         },
 
+
         json: true // Automatically stringifies the body to JSON
     };
+
     if (test==0){ 
         await rp(options)
         .then(async function (body) {
-            await fixPayTGO(payid, body.pay_tgo);
+            var r = await fixPayTGO(payid, body.pay_tgo);
         })
         .catch(function (err) {
             console.err(err);
@@ -336,6 +352,7 @@ async function sendPayTGO(payid, uid, payidbank, amount, dt, client_id, provider
     }else{
         //console.log("TEST BANK NOD LOAD FROM BILLING");
         const er = await fixPayTGO(payid, -99);
+        console.log("Error register pay - bankid: "+tgo+" sources:"+src);
     }    
 };
 
