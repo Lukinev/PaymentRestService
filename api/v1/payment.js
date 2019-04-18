@@ -183,12 +183,66 @@ router.post('/payment/setPayIdBank', async(req,res)=>{
    }
 })
 
+router.post('/payment/delPayIdTGO', async(req,res)=>{
+    var st= await checkJWT(req.body);
+    if (st.status==200) 
+    { 
+        const pay = await libs.execQuery(models.paymentSetBankID, [req.body.payment_id ,req.body.pay_id_tgo, req.body.client_id ], global.pool_payment);
+        console.log(pay.rows[0]);
+       if (Boolean(pay.rows[0])){
+        //console.log("fix pay "+req.body.client_id+", "+pay.rows);
+        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": pay.rows });
+       }else{
+        res.status(400).json({ "status": 400, "error": "Not find pay", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+       }
+    }else{
+        res.status(400).json({ "status": 400, "error": "Bad autorized token", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "token": st.status });
+   }
+})
+
+router.post('/payment/setPayIdEasy', async(req,res)=>{
+        /*
+        {order_id - ваш ордерИД из,
+            payment_id - наш номер транзакции,
+            merchant_id -  номер вашего сервиса в нашей системе 
+
+            "action":"payment",
+            "merchant_id":5310,
+            "order_id":682,
+            "version":"v3.0",
+            "date":"2018-05-15T16:38:13.3840522+03:00",
+            "details":{
+            "amount":1.00,
+            "desc":"test ",
+            "payment_id":123456,
+            "recurrent_id":null
+        }
+        }
+        */ 
+        console.log(parseInt(req.body.order_id, 10));
+
+        const client_id=5;
+        let pay_id_bank=req.body.details.payment_id;
+        let payment_id=parseInt(req.body.order_id, 10);
+
+        const pay = await libs.execQuery(models.paymentSetBankID, [payment_id ,pay_id_bank, client_id], global.pool_payment);
+        //console.log(pay.rows[0]);
+       if (Boolean(pay.rows[0])){
+        console.log("fix pay "+req.body.client_id+", "+pay.rows);
+        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": pay.rows });
+       }else{
+        res.status(400).json({ "status": 400, "error": "Not find pay", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+       }
+})
+
 //Выбор записей не переданных в ТГО
 async function selectNotSendTGO() {
     //Выбираем все записе не отправленные в биллинг
     const res = await libs.execQuery(models.paymentGetNotSendPay,[],global.pool_payment);
-    if (res.rowCount>0){
+    //console.log(res.rows);
+    if ((res.rowCount>0)){
         for (var i = 0; i < res.rows.length; i++) {
+            
             await sendPayTGO(
                     res.rows[i].id, 
                     res.rows[i].uid,
@@ -197,39 +251,75 @@ async function selectNotSendTGO() {
                     res.rows[i].createdat,
                     res.rows[i].client_id,
                     res.rows[i].provider_id 
-                    );
+                    );            
         }
     }
     else{
-        console.log("notfind unregistered pay:"+res.rows[i].id);
+        console.log("notfind unregistered pay");
     }    
+}
+
+async function deletePayTGO(pay_id_tgo){
+    var options = {
+        method: 'POST',
+        //1 удалилось, 0 - уже удалено, -1 платеж не найден
+        /*function heat.API_BANK_LOAD_TEST.PAY_DELETE (
+        m_PAY_ID IN NUMBER
+        )  RETURN NUMBER;
+        */
+        uri: 'http://85.238.97.144:3000/webload/delPay',
+        body: {
+            "pay_id_tgo":pay_id_tgo
+        },
+
+        json: true // Automatically stringifies the body to JSON
+    };
+        await rp(options)
+        .then(async function (body) {
+            const er = await fixPayTGO(payid, -99);
+            //await fixPayTGO(payid, body.pay_tgo);
+        })
+        .catch(function (err) {
+            //console.err(err);
+            return;
+        });        
 }
 
 //Отправка одной записи записи в ТГО
 async function sendPayTGO(payid, uid, payidbank, amount, dt, client_id, provider_id ) {
     //Получить идентификатор банка ТГО
     const b = await libs.execQuery(models.paymentGetBankTGO,[client_id], global.pool_account);
+    //console.log(b.rows[0].test);
     //получить account из uid
-    const acc = await libs.execQuery(model_account.accountGetACCOUNT_ORG,[uid,provider_id],global.pool_account);
+    const acc = await libs.getAccount(uid ,provider_id);//await libs.execQuery(model_account.accountGetACCOUNT_ORG,[uid,provider_id],global.pool_account);
+    console.log(acc);
     //Узнаем находится ли клиент в тесте
-    
-    var test = b.rows[0].test;
-    //console.log(test);
+    var test = 1;
+    var src = 0;
+    var tgo=0;
+
+    if (Boolean(b.rows[0].test)){
+        test = b.rows[0].test;}
+
+    if (Boolean(b.rows[0].source_id)){
+        src = b.rows[0].source_id;}
+
+    if (Boolean(b.rows[0].id_tgo)){
+        tgo=b.rows[0].id_tgo;}
 
     pay_bank_id = payidbank.toString();
     var options = {
         method: 'POST',
-
         uri: 'http://85.238.97.144:3000/webload/addPay',
         body: {
             "payid":payid,
-            "account": acc.rows[0].ls_org,
+            "account": await libs.getAccount(uid ,provider_id),
             "payidbank":pay_bank_id,
             "amount":amount,
             "dt": moment(dt).format('DD.MM.YYYY'),
             "notes":"--",
-            "bankid":b.rows[0].id_tgo,
-            "sources":1
+            "bankid":tgo,
+            "sources":src
         },
 
         json: true // Automatically stringifies the body to JSON
@@ -240,12 +330,12 @@ async function sendPayTGO(payid, uid, payidbank, amount, dt, client_id, provider
             await fixPayTGO(payid, body.pay_tgo);
         })
         .catch(function (err) {
-            console.log(err);
+            console.err(err);
             return;
         });
     }else{
         //console.log("TEST BANK NOD LOAD FROM BILLING");
-        fixPayTGO(payid, -99);
+        const er = await fixPayTGO(payid, -99);
     }    
 };
 
@@ -253,5 +343,6 @@ async function fixPayTGO(payid, pay_id_tgo) {
     const p = await libs.execQuery(models.paymentSetPayTGO, [payid, pay_id_tgo], global.pool_payment); 
     //console.log(p.rows);  
 }
+
 
 module.exports = router;

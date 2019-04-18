@@ -344,17 +344,26 @@ module.exports = models = {
 	accountGetCounter:{
 		name:'account get counter',
 		text:`select c.uid, ls.name account, c.usluga_id, v."name" usluga, u.short_name, c.place_code, c.plase_name, c.wrk_number, c.mtype_name,
-					c.date_last old_data, c.data_last old_value 
+					c.date_last old_date, c.data_last old_value, cv.date_curr  new_date, cv.new_val  new_value
 
-				from counters c
-				left join unitname as u on u.id=c.unit_id
-				left join viduslugi as v on v.id=c.usluga_id
-				left join ls_shet as ls on ls.ls=c.uid and ls.usluga=(CASE WHEN coalesce(c.usluga_id, 4) = 4 THEN 3 ELSE 3 END)
+					from counters c
+					left join unitname as u on u.id=c.unit_id
+					left join viduslugi as v on v.id=c.usluga_id
+					left join ls_shet as ls on ls.ls=c.uid and ls.usluga=(CASE WHEN coalesce(c.usluga_id, 4) = 4 THEN 3 ELSE 3 END)
+					left join counterval cv on cv.uid=c.uid and cv.placecode = c.place_code and cv.id_period = $2 and cv.usluga_id=c.usluga_id
 
 				where
 					c.uid=$1
 		
 			order by c.kod_org, c.place_code`
+	},
+
+	accountDelParamCounter:{
+		name:'delete values counter',
+		text:`delete from counterval
+		where
+			id_period=$1 and uid=$2 and usluga_id=$3 and provider_id=$4 and placecode=$5`
+
 	},
 
 	accountSetParamCounter:{

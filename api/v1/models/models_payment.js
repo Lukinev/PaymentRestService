@@ -1,7 +1,7 @@
 module.exports = models = {
     paymentGetBankTGO:{
         name: 'account get bank tgo',
-        text:'select id_tgo, test from bank where id=$1'
+        text:'select id_tgo, test, source_id from bank where id=$1'
 },
     
     paymentById: {
@@ -115,4 +115,5 @@ module.exports = models = {
         name: 'set bank id',
         text:'update payments SET pay_id_bank=$2 where id=$1 and client_id=$3 RETURNING pay_id_bank'
     }
+
 }

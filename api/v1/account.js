@@ -27,9 +27,9 @@ router.get('/account/getBLANK2016/:ls/:code', async (req, res)=> {
         request (url, async (error, response, body)=> {
             if (!error && response.statusCode === 200) {
                 var r = JSON.parse(body)
-                r = r['message'][0];
+                row = r['message'][0];
                 //выдаем инфо из базы ТГО 
-                res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r });
+                res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": row });
                 //и обновляем информацию в нашей базе 
                 const blank2016_insert = await libs.execQuery(models.accountBlank2016Insert,[
                     uid,
@@ -252,6 +252,8 @@ router.post('/account/checkLS', async (req,res)=>{
 router.post('/account/getCounter',async (req,res)=>{
 //    var provider_id = 39;
     var uid=0;
+    var period_id=await libs.getCurrPeriod(); 
+
     /*if (Boolean(req.body.provider_id)!=false){
             provider_id = req.body.provider_id;
     }*/
@@ -260,7 +262,8 @@ router.post('/account/getCounter',async (req,res)=>{
         uid = req.body.uid;
     }
 
-    var u = await (libs.execQuery(models.accountGetCounter,[uid], global.pool_account));
+
+    var u = await (libs.execQuery(models.accountGetCounter,[uid, period_id], global.pool_account));
     if (Boolean(u.rows[0])&&(uid>0)){
         res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
     }else{
@@ -283,6 +286,16 @@ router.post('/account/setParamCounter', async(req,res)=>{
     }
     account = await libs.getAccount(uid, provider_id);
     //console.log(account);
+    //Сначала удалим запись счетчика в том же периоде у этого абонента по этому счетчику
+
+
+    var d = await (libs.execQuery(models.accountDelParamCounter,[
+            await libs.getCurrPeriod(), 
+            uid, 
+            req.body.usluga_id,
+            req.body.provider_id,
+            req.body.placecode
+        ], global.pool_account));
 
     var u = await (libs.execQuery(models.accountSetParamCounter,[
                         await libs.getCurrPeriod(), 
@@ -295,7 +308,7 @@ router.post('/account/setParamCounter', async(req,res)=>{
                         req.body.new_val,
                         req.body.notes,
                         req.body.client_id
-                    ], global.pool_payment));
+                    ], global.pool_account));
 
     if (Boolean(u.rows[0])&&(uid>0)){
         res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
@@ -324,14 +337,22 @@ router.post('/account/getOrganization',async (req,res)=>{
 router.post('/account/getLgot',async (req,res)=>{
     var provider_id = 39;
     var uid=0;
+    var period_id = req.body.period_id;
+    if (Boolean(req.body.period_id)==false){
+        period_id = await libs.getCurrPeriod();
+}
     if (Boolean(req.body.provider_id)!=false){
             provider_id = req.body.provider_id;
     }
     if (Boolean(req.body.uid)!=false){
         uid = req.body.uid;
-}
+    }
 
-    var u = await (libs.execQuery(models.accountGetLgot,[provider_id, req.body.period_id, uid], global.pool_account));
+    if (period_id==await libs.getWorkPeriod()){
+        period_id=await libs.getCurrPeriod();
+    }
+
+    var u = await (libs.execQuery(models.accountGetLgot,[provider_id, period_id, uid], global.pool_account));
     if (Boolean(u.rows[0])&&(uid>0)){
         res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": u.rows });
     }else{
