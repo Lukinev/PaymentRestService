@@ -10,6 +10,11 @@ async function getWorkPeriod(){
     res = u.rows[0].id;
     return res;
 }
+async function getWorkPeriodName(){ 
+    let u = await global.pool_account.query(model_account.accountWorkPeriod); 
+    res = u.rows[0].Name;
+    return res;
+}
 
 async function getCurrPeriod(){ 
     let u = await global.pool_account.query(model_account.accountCurrPeriod);  
@@ -25,7 +30,7 @@ async function getAccount(uid, id_provider){
 
 async function getUid(account, id_provider){ 
     let u = await global.pool_account.query('select ls uid from ls_shet ls where ls."name"=$1 and ls.kod_org = $2',[account, id_provider]);  
-    res = u.rows[0].account;
+    res = u.rows[0].uid;
     return res;
 }
 // func cheked income data by pattern
@@ -87,6 +92,7 @@ module.exports = {
     checkUID, 
     checkAmount,
     getWorkPeriod,
+    getWorkPeriodName,
     getCurrPeriod,
     getAccount,
     getUid

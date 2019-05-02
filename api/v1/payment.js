@@ -84,7 +84,7 @@ router.post('/payment/create', async (req, res) => {
                     pay_id_bank
                     ], global.pool_payment);
 
-                await selectNotSendTGO();
+                //await selectNotSendTGO();
                 res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows});
                 }
     } else
@@ -139,7 +139,7 @@ router.post('/payment/setStorno', async (req,res)=>{
             dt_storno = new Date(dt.now());
             delta=dt_storno.getTime()-dt_pay.getTime();
             dt_rang = Math.floor(delta/1000/60/60/24);
-            if (dt_rang==0){
+           // if (dt_rang==0){
                 //надо проверить, если сторно в этом платеже
                 const check_storno = await libs.execQuery(models.paymentCheckStorno,[req.body.payment_id], global.pool_payment);
                 if (check_storno.rows[0].count==0){
@@ -150,10 +150,10 @@ router.post('/payment/setStorno', async (req,res)=>{
 
                     res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
                     
-                }else{
-                    res.status(400).json({ "status": 400, "error": "Storno from pay already exists!", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+                //}else{
+                    //res.status(400).json({ "status": 400, "error": "Storno from pay already exists!", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
 
-                }
+                //}
             }else{
                 res.status(400).json({ "status": 400, "error": "data pay is old!", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
             }
@@ -173,7 +173,7 @@ router.post('/payment/setPayIdBank', async(req,res)=>{
         const pay = await libs.execQuery(models.paymentSetBankID, [req.body.payment_id ,req.body.pay_id_bank, req.body.client_id ], global.pool_payment);
         console.log(pay.rows[0]);
        if (Boolean(pay.rows[0])){
-        console.log("fix pay "+req.body.client_id+", "+pay.rows);
+        console.log("fix pay "+req.body.payment_id+", client"+req.body.client_id+", id_bank:"+req.body.pay_id_bank);
         res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": pay.rows });
        }else{
         res.status(400).json({ "status": 400, "error": "Not find pay", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
@@ -192,7 +192,8 @@ router.post('/payment/delPayTGO', async(req,res)=>{
 
        if (Boolean(pay.rows[0])){
             if ((pay.rows[0].pay_id_tgo)>0){
-                var d = await deletePayTGO(pay.rows[0].pay_id_tgo);
+                //console.log(pay.rows[0].pay_id_tgo);
+                var d = await deletePayTGO(req.body.payment_id, pay.rows[0].pay_id_tgo);
                 res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "deleted": req.body.payment_id});
             }
        }else{
@@ -203,6 +204,8 @@ router.post('/payment/delPayTGO', async(req,res)=>{
    }
 })
 
+/**Функция созданна исключительно для банка easypay для подверждения принятого платежа
+ */
 router.post('/payment/setPayIdEasy', async(req,res)=>{
         /*
         {order_id - ваш ордерИД из,
@@ -241,6 +244,7 @@ router.post('/payment/setPayIdEasy', async(req,res)=>{
 
 router.post('/payment/sendNotFixPay', async(req,res)=>{
     await selectNotSendTGO();
+    console.log("manual run selectNotSendTGO");
     res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "FIX": "OK" });
     
 })
@@ -268,9 +272,11 @@ async function selectNotSendTGO() {
     }    
 }
 
-async function deletePayTGO(payment_id,pay_id_tgo){
+async function deletePayTGO(payment_id, pay_id_tgo){
     var options = {
         method: 'POST',
+        //24100043
+        //24100041
         //1 удалилось, 0 - уже удалено, -1 платеж не найден
         /*function heat.API_BANK_LOAD_TEST.PAY_DELETE (
         m_PAY_ID IN NUMBER
@@ -287,11 +293,13 @@ async function deletePayTGO(payment_id,pay_id_tgo){
         .then(async function (body, result) {
             if (body.pay_tgo===1){
             await fixPayTGO(payment_id, -99);
-            result = body.pay_tgo;
-            return result;
-            //await fixPayTGO(payid, body.pay_tgo);
-            }else {console.log(" pay_id="+payment_id+" not del pay_id_tgo="+pay_id_tgo+", error="+ body.pay_tgo);
-        }
+                result = body.pay_tgo;
+                console.log('deleted pay_tgo: '+body.pay_tgo);
+                return result;
+            }else
+            {
+                console.log(" pay_id="+payment_id+" not del pay_id_tgo="+pay_id_tgo+", error="+body.pay_tgo);
+            }
         })
         .catch(function (err) {
             //console.err(err);
@@ -335,8 +343,6 @@ async function sendPayTGO(payid, uid, payidbank, amount, dt, client_id, provider
             "bankid":tgo,
             "sources":src
         },
-
-
         json: true // Automatically stringifies the body to JSON
     };
 
@@ -346,7 +352,7 @@ async function sendPayTGO(payid, uid, payidbank, amount, dt, client_id, provider
             var r = await fixPayTGO(payid, body.pay_tgo);
         })
         .catch(function (err) {
-            console.err(err);
+            console.log(err);
             return;
         });
     }else{

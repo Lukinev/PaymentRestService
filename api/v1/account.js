@@ -3,6 +3,8 @@ Router = require('express-promise-router'),
 router = new Router(),
 models = require('./models/models_account'),
 { checkJWT } = require('./libs/auth'),
+Step = require('step'),
+async = require('async');
 libs = require('./libs/functions');
 var request = require('request');
 
@@ -71,38 +73,48 @@ router.get('/account/getBLANK2016/:ls/:code', async (req, res)=> {
 }else{res.status(400).json({ "status": 400, "error": "Not find Account", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });}
 })
 
+router.post('/account/getPeriod', async (req, res) => {
+    
+    var period_id=await libs.getWorkPeriod();
+    var period_name=await libs.getWorkPeriodName();
+    res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "period_id": period_id, "period_name": period_name });
 
+})
 router.post('/account/byAcc', async (req, res) => {
-    var uid = 0;
+    let uid = 0;
     var u;
     var provider_id =0;
      //Сначала получим UID из л/с поставщика
     if (Boolean(req.body.provider_id) == false)
     {
-//        u = await libs.execQuery(models.accountGetUID,[req.body.account], global.pool_account);
         provider_id=39;
     }else {
-        //u = await libs.execQuery(models.accountGetUID_ORG,[req.body.account, req.body.provider_id], global.pool_account);     
         provider_id=req.body.provider_id;
     }
-    u = await libs.execQuery(models.accountGetUID_ORG,[req.body.account, provider_id], global.pool_account);     
-    if (u.rowCount>0){
-        //console.log(u.rows[0].uid);
-        uid = u.rows[0].uid;
-        await updateTGO(uid, req.body.account, provider_id);
-    } else
-        uid=0;
 
-    //пробуем получить данные с внешнего протокола
-    if (uid>0){ 
-        //теперь получаем данные по uid
-        console.log("byAcc: "+req.body.account);
-
-        const r = await libs.execQuery(models.accountByDATA, [uid], global.pool_account);
-        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
-    }else
-        res.status(400).json({ "status": 400, "error": "Not find UID", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+    async.waterfall([
+        async function checkDateTGO(){
+            uid = await libs.getUid(req.body.account, provider_id);
+            //console.log('Step 1: '+uid+", "+req.body.account+", "+provider_id);
+        },
+        async function insertDataTGO(){ 
+            if (uid>0){
+                await updateTGO(uid, req.body.account, provider_id);
+            }
+        },
+        async function resultData(){            
+            //пробуем получить данные с внешнего протокола
+            if (uid>0){ 
+            //теперь получаем данные по uid
+            console.log("byAcc: "+req.body.account);
+            const r = await libs.execQuery(models.accountByDATA, [uid], global.pool_account);
+            res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
+            }else
+                res.status(400).json({ "status": 400, "error": "Not find UID", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+        }
+    ]);
 });
+
 
 //Получение данных по UID
 router.post('/account/getUID', async (req, res) => {
@@ -119,8 +131,9 @@ if (Boolean(req.body.provider_id) == false)
 
 if (uid>0){
     let account =await libs.getAccount(uid,provider_id);    
-    let t = await updateTGO(uid, account, provider_id);
-    console.log("getUID: "+uid+", "+account);
+    console.log("updateTGO from getUID: "+req.body.account+", "+uid+", "+provider_id);
+    var t = await updateTGO(uid, account, provider_id);
+
     const r = await libs.execQuery(models.accountByDATA, [uid], global.pool_account);
     //console.log(uid);
     res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
@@ -134,38 +147,35 @@ if (uid>0){
 //Получение текущего стостояния абонента
 //аналог функции дениса getCalc
 router.post('/account/getCalc', async (req, res) => {
-    var uid=0;
-    var u;
-    var provider_id=0;
-    //console.log(req.body.account);
-    
+    let uid=0;
+    let provider_id=0;
      //Сначала получим UID из л/с поставщика
-    if (Boolean(req.body.provider_id) == false)
-    {
-        u = await libs.execQuery(models.accountGetUID,[req.body.account], global.pool_account);
-        provider_id=39;
-        console.log("variable: 'provider_id' not find");
-    }else {
-        provider_id=req.body.provider_id;
-        u = await libs.execQuery(models.accountGetUID_ORG,[req.body.account, req.body.provider_id], global.pool_account);     
-    }
-   
+     if (Boolean(req.body.provider_id) == false)
+     { provider_id=39;}
+     else
+     { provider_id=req.body.provider_id;}
+     uid = await libs.getUid(req.body.account, provider_id);
 
-    if (u.rowCount>0){
-        uid = u.rows[0].uid;
-        await updateTGO(uid, req.body.account, provider_id);
-    } else
-        uid=0;
-
-
-        if (uid>0){ 
-            //теперь получаем данные по uid
-            const r = await libs.execQuery(models.accountGetCalc, [uid,provider_id], global.pool_account);
-            res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
-        }else
-            res.status(400).json({ "status": 400, "error": "Not find UID", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
-
-
+     async.waterfall([   
+        async function StepUpdateTGO(){
+            if (uid>0){
+                //uid = u.rows[0].uid;
+                console.log("updateTGO from getCalc: "+req.body.account+", "+uid+", "+provider_id);
+                await updateTGO(uid, req.body.account, provider_id);
+            } else
+                uid=0;
+        },
+        async function StepResult(){
+            if (uid>0){ 
+                //теперь получаем данные по uid
+                const r = await libs.execQuery(models.accountGetCalc, [uid,provider_id], global.pool_account);
+            //Синхроним отправленные счета
+                const d = await 
+                res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
+            }else
+                res.status(400).json({ "status": 400, "error": "Not find UID", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+        }
+    ]);
 }),
 
 //Поиск абонентов по адрессу
@@ -362,29 +372,37 @@ router.post('/account/getLgot',async (req,res)=>{
 
 })
 
-async function updateTGO(uid, account, provider_id){
+router.post('/account/updateTGO',async (req,res)=>{
+    provider_id = 39;
+    account = await libs.getAccount(req.body.uid, provider_id);
+    await updateTGO(req.body.uid, account, provider_id);
 
+    res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "result":"ok" });
+})
+
+async function updateTGO(uid, account, provider_id){
+    if (provider_id!=39){
+            //console.log("provider_id!="+provider_id);
+            provider_id = 39; 
+    }
     var wrk_period = await libs.getWorkPeriod();
 
-   var url = 'http://85.238.97.144:3000/webload/'+account+'.'+wrk_period+'.6';
+    var url = 'http://85.238.97.144:3000/webload/'+account+'.'+wrk_period+'.6';
 
         await request (url, async (error, response, body)=> {
             
             if (!error && response.statusCode === 200) {
-              const fbResponse = JSON.parse(body)
-              const dt = fbResponse['message'][0];
-              for(var i=0; i<dt.length; i++) { //Первые 2 записи
-                    //Проверяем есть ли такая запись в тса по лс периоду и коду организации
-            
-                const tsa_count = await libs.execQuery(models.accountGetTsaCount,[uid,dt[i]['PERIOD_ID'],provider_id], global.pool_account);
-                const row_count = tsa_count.rows[0].count;
-                
-                if(row_count==0){
+                const fbResponse = await JSON.parse(body)
+                const dt = fbResponse['message'][0];
+                //Проверяем есть ли такая запись в тса по лс периоду и коду организации
+                const i=0;
+                const tsa_count = await libs.execQuery(models.accountGetTsaCount,[uid, wrk_period, provider_id], global.pool_account);
+                const row_count = await tsa_count.rows[0].count;
+                if(row_count===0){
                     //Тогда инсертим данные
                     var today = new Date();
                     var options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' };
-    
-                    const tsa_insert = await libs.execQuery(models.accountTsaInsert,[    
+                    var tsa_insert = await libs.execQuery(models.accountTsaInsert,[    
                                             uid,
                                             moment().format('DD.MM.YYYY hh:mm:ss.SSS'),
                                             dt[i]["PERS"], 
@@ -401,18 +419,17 @@ async function updateTGO(uid, account, provider_id){
                                             dt[i]["SUM_PAY_MPOM"],
                                             dt[i]["SUM_PAY_COMP"], 
                                             dt[i]["SUM_PAY_SUBS"],
-                                            dt[i]['PERIOD_ID']
+                                            wrk_period
                                         ],
                                             
                                             global.pool_account);
+                    console.log("INSERT TSA "+uid+" period_id: "+wrk_period);
                 }else{
                     //console.log("UPDATE PERIOD "+dt[i]['PERIOD_ID']);
-    
-            
                     //Обновляем данные в sheta
-                    //text: 'UPDATE sheta SET kp=$1, pl_o=$2, a_close=$3, a_dem=$4 where ls=$5'
                     const sheta_update  = await libs.execQuery(models.accountShetaUpdate,
                         [
+                            //dt[i]['CIV_NAME'],
                             dt[i]['PERS'],//'kp'
                             dt[i]['SQ'],//'pl_o'
                             dt[i]['A_CLOSE'],//a_close
@@ -420,9 +437,6 @@ async function updateTGO(uid, account, provider_id){
                             uid //Отбор по  этому значению
                         ]
                         ,global.pool_account);
-    
-                    
-            
                     const tsa_update = await libs.execQuery(models.accountTsaUpdate,[
                             dt[i]['PERS'],//kp=$1, +
                             dt[i]['SUM_TOPAY'],//koplate=$2, +
@@ -440,13 +454,19 @@ async function updateTGO(uid, account, provider_id){
                             dt[i]['SALDOK'],//saldok=$14,+
                             /////////////////
                             uid, //ls=$15 and 
-                            dt[i]['PERIOD_ID']//id_period=$16'
+                            wrk_period//id_period=$16'
                         ]
                         ,global.pool_account);
-                        
+
+                    const ls_shet = await libs.execQuery(models.accountLsShetUpdate,[
+                            uid,
+                            provider_id,
+                            3,
+                            dt[i]['CIV_NAME']
+                        ]
+                        ,global.pool_account
+                    ) 
                 }
-            }
-        
             } else {
               console.log("Error connect to Oracle: ");
             } 

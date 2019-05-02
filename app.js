@@ -6,6 +6,8 @@ const
   fs = require('fs'),
   http = require('http'),
   https = require('https'),
+
+  
   express = require('express'),
   app = express(),
   conf = require('./config'),
@@ -23,6 +25,15 @@ const https_options = {
     ca: fs.readFileSync("./cert/ca.crt"),
   requestCert: true,
   rejectUnauthorized: true
+};
+
+// option for use HTTPS
+const https_options_18 = {
+  key: fs.readFileSync("./cert/server.key"),
+  cert: fs.readFileSync("./cert/server.crt"),
+  ca: fs.readFileSync("./cert/ca.crt"),
+requestCert: false,
+rejectUnauthorized: false
 };
 
 // pools of connections to DB 
@@ -72,8 +83,11 @@ var httpServer = http.createServer(app);
 var httpsServer = https.createServer(https_options, app);
 
 
+
   httpServer.listen(conf.api_port);
   httpsServer.listen(conf.api_port_ssl);
+  
+  
 
   console.log('Worker ${process.pid} started');
 }

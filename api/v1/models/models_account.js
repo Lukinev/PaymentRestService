@@ -21,7 +21,7 @@ module.exports = models = {
 		t.saldon as saldon, -- Долг наначало периода
 		t.sum_topay as SUM_TOPAY, --Начисленно
 		t.saldok as saldok, -- Сумма к оплате
-		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 		s.ls as  uid, -- Единый номер лицевого счета
 		ls.name as account, -- лицевой счет поставщика услуг.
 		o.id as provider_id,-- код поставщика услуг согласно справочника организаций (ORGANIZATION)*
@@ -65,7 +65,7 @@ module.exports = models = {
 		end tarif,
 		t.sum_pay_bank SUM_PAY_BANK,
 		t.saldok,
-		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 		s.ls uid,
 		ls."name" account,
 		o.id as provider_id,-- код поставщика услуг согласно справочника организаций (ORGANIZATION)*
@@ -98,7 +98,7 @@ module.exports = models = {
 	accountWorkPeriod: {
 		name: 'period get work',
 		required_fields: [],
-		text: 'select id from period p where p.works=true'
+		text: 'select p.id, p."Name" from period p where p.works=true'
 
 	},
 
@@ -106,7 +106,7 @@ module.exports = models = {
 		name: 'tsa get period_id',
 		required_fields: ['uid', 'id_period, kod_poluch'],
 		text: 'select count(t.np) from tsa t	where ' 
-					+'t.ls=$1 and t.id_period=$2 and kod_poluch=$3'
+					+'t.ls=$1 and t.id_period=$2 and t.kod_poluch=$3'
 	},
 
 	accountTsaUpdate:{
@@ -115,6 +115,10 @@ module.exports = models = {
 							'tarif=$5, usluga=$6, sum_trf_ht=$7, sum_topay_ht=$8, saldon=$9, sum_topay_fw=$10, '+ 
 							'sum_pay_bank=$11, sum_pay_mpom=$12, sum_pay_comp=$13, saldok=$14'+
 							'where ls=$15 and id_period=$16'
+	},
+	accountTsaDelete:{
+		name: 'tsa delete',
+		text: `DELETE FROM TSA WHERE(ls=$1 and $2,$3)`
 	},
 	accountTsaInsert:{
 		name: 'tsa insert',
@@ -126,6 +130,11 @@ module.exports = models = {
 	accountShetaUpdate:{
 		name: 'sheta update',
 		text: 'UPDATE sheta SET kp=$1, pl_o=$2, a_close=$3, a_dem=$4 where ls=$5'
+	},
+
+	accountLsShetUpdate:{
+		name: 'LS_SHET update',
+		text: 'UPDATE ls_shet SET fio=$4 where ls=$1 and kod_org=$2 and usluga=$3'
 	},
 
 		//Получение лицевого счета организации по uid
@@ -175,7 +184,7 @@ module.exports = models = {
 				b.ADDR_ID,
 				l."name" as civ_code, 
 				f.fio civ_name,
-				(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+				(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home||s.house_char||s.house_drob , '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 		 		b.sq,
 		 		b.sq_dom,
 		 		b.pers,
@@ -215,7 +224,7 @@ module.exports = models = {
 				l."name" CIV_CODE,
 				t.dt REG_DATE,
 				l.fio CIV_NAME,
-				(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+				(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 				v."name" SERV_NAME,
 				s.kp PERS,
 				s.pl_o SQ,
@@ -263,7 +272,7 @@ module.exports = models = {
 		s.ls UID,
 		l."name" CIV_CODE,
 		l.fio CIV_NAME,
-		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 		s.kp PERS,
 		s.pl_o SQ
 			from sheta s
@@ -291,7 +300,7 @@ module.exports = models = {
 			s.ls uid,
 			l."name" CIV_CODE,
 			l.fio FIO,
-			(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+			(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
 			--s.kp PERS,
 			--s.pl_o SQ,
 			--t.id_period,'
