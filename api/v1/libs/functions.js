@@ -30,7 +30,12 @@ async function getAccount(uid, id_provider){
 
 async function getUid(account, id_provider){ 
     let u = await global.pool_account.query('select ls uid from ls_shet ls where ls."name"=$1 and ls.kod_org = $2',[account, id_provider]);  
-    res = u.rows[0].uid;
+    if (u.rows.length>0){
+        res = u.rows[0].uid;
+    }else
+    {
+        res = 0;
+    }
     return res;
 }
 // func cheked income data by pattern
