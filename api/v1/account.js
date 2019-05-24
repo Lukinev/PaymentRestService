@@ -463,4 +463,55 @@ async function updateTGO(uid, account, provider_id){
 }
 
 
+//Отправляем показания счетчика в ТГО
+async function sendCounterTGO(payid, uid, payidbank, provider_id, placecode,date_prev, start_val, date_curr, new_val, unit, serv, meter_id, link_id, load_id, notes) {
+    //получить account из uid
+    let acc = await libs.getAccount(uid ,provider_id);
+
+    var src = 0;
+    var tgo=0;
+    var test = 1; //Тестовый режим = 1
+        
+    pay_bank_id = payidbank.toString();
+    var options = {
+        method: 'POST',
+        uri: 'http://85.238.97.144:3000/webload/addCounter',
+        body: {
+            "account":acc,
+            "provider_id":provider_id,
+            "placecode":placecode,  
+            "date_prev":date_prev,
+            "start_val":start_val,   
+            "date_curr":date_curr, 
+            "new_val":new_val,
+            "rashod":0,
+            "unit":unit,      
+            "serv":serv,    
+            "meter_id":meter_id,    
+            "link_id":link_id, 
+            "load_id":load_id,     
+            "notes":notes
+        },
+        json: true // Automatically stringifies the body to JSON
+    };
+
+    if (test==0){ 
+        await rp(options)
+        .then(async function (body) {
+            var r = await fixPayTGO(payid, body.pay_tgo);
+            console.log("sendPayTGO: "+acc);
+        })
+        .catch(function (err) {
+            console.log(err);
+            return;
+        });
+    }else{
+        //console.log("TEST BANK NOD LOAD FROM BILLING");
+        //const er = await fixPayTGO(payid, -99);
+        console.log("Error send counter values: "+tgo+" sources:"+src);
+    }    
+};
+
+
+
 module.exports = router;
