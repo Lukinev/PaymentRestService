@@ -398,6 +398,7 @@ async function sendPayTGO(payid, uid, payidbank, amount, dt, client_id, provider
             console.log(err);
             return;
         });
+        
     }else{
         //console.log("TEST BANK NOD LOAD FROM BILLING");
         const er = await fixPayTGO(payid, -99);

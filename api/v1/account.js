@@ -372,9 +372,10 @@ async function updateTGO(uid, account, provider_id){
             provider_id = 39; 
     }
     var wrk_period = await libs.getWorkPeriod();
-
+//    var wrk_period = await libs.getCurrPeriod();
+    console.log();
     var url = 'http://85.238.97.144:3000/webload/'+account+'.'+wrk_period+'.6';
-
+    //console.log(url);
         await request (url, async (error, response, body)=> {
             
             if (!error && response.statusCode === 200) {
@@ -388,6 +389,7 @@ async function updateTGO(uid, account, provider_id){
                     //Тогда инсертим данные
                     var today = new Date();
                     var options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' };
+                    
                     var tsa_insert = await libs.execQuery(models.accountTsaInsert,[    
                                             uid,
                                             moment().format('DD.MM.YYYY hh:mm:ss.SSS'),

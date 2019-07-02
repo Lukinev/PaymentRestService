@@ -101,6 +101,21 @@ router.post('/heatmeter/getId', async (req, res) => {
         res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
 });
 
+/**Выводит список зарегистрированных типов приборов учета с кодом и наименованием */
+router.post('/heatmeter/getTypCounter', async(req,res) =>{
+
+});
+
+/**Выводит список зарегистрированных единиц Измерений */
+router.post('/heatmeter/getTypCounter', async(req,res) =>{
+
+});
+
+
+/**Производит регистрацию нового прибора учета в системе*/
+router.post('/heatmeter/addCounter',async (req, res) => {
+
+})
 /*
  * 
  router.post('/payment/byid', async (req, res) => {

@@ -124,7 +124,7 @@ module.exports = models = {
 		name: 'tsa insert',
 		text: `INSERT INTO TSA (ls, dt, kp, kod_poluch, usluga, 
 						sum_trf_ht, SUM_TOPAY_HT, sum_trf_fw, SUM_TOPAY_FW, SALDON, SUM_TOPAY, SUM_PAY_BANK, SALDOK ,
-						SUM_PAY_MPOM, SUM_PAY_COMP, subsid, id_period) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`
+						SUM_PAY_MPOM, SUM_PAY_COMP, subsid, id_period) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16, $17)`
 	},
 
 	accountShetaUpdate:{
