@@ -21,7 +21,11 @@ module.exports = models = {
 		t.saldon as saldon, -- Долг наначало периода
 		t.sum_topay as SUM_TOPAY, --Начисленно
 		t.saldok as saldok, -- Сумма к оплате
-		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+		(COALESCE(str.NAME, '') || 
+		COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || 
+		CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || 
+		coalesce(' кв. '||s.kv, '')|| 
+		case when coalesce(s.kvart_char,'')='' then '' else '-'||s.kvart_char end AS address,
 		s.ls as  uid, -- Единый номер лицевого счета
 		ls.name as account, -- лицевой счет поставщика услуг.
 		o.id as provider_id,-- код поставщика услуг согласно справочника организаций (ORGANIZATION)*
@@ -65,7 +69,11 @@ module.exports = models = {
 		end tarif,
 		t.sum_pay_bank SUM_PAY_BANK,
 		t.saldok,
-		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+		(	COALESCE(str.NAME, '') || 
+			COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || 
+			CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || 
+			coalesce(' кв. '||s.kv, '')|| 
+			case when coalesce(s.kvart_char,'')='' then '' else '-'||s.kvart_char end AS address,
 		s.ls uid,
 		ls."name" account,
 		o.id as provider_id,-- код поставщика услуг согласно справочника организаций (ORGANIZATION)*
@@ -82,7 +90,6 @@ module.exports = models = {
 			left join viduslugi as vu on ls.usluga = vu.id
 			left join public.street as str on str.np = s.street_nom 
 			left join public.bank as b on b.id = o.bank
-
 	where
 	s.ls = $1
 	order by vu.groups, ls.usluga`
@@ -184,8 +191,12 @@ module.exports = models = {
 				b.ADDR_ID,
 				l."name" as civ_code, 
 				f.fio civ_name,
-				(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home||s.house_char||s.house_drob , '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
-		 		b.sq,
+				(	COALESCE(str.NAME, '') || 
+				COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || 
+				CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || 
+				coalesce(' кв. '||s.kv, '')|| 
+				case when coalesce(s.kvart_char,'')='' then '' else '-'||s.kvart_char end AS address,
+				b.sq,
 		 		b.sq_dom,
 		 		b.pers,
 		 		b.A_STATE,
@@ -224,7 +235,13 @@ module.exports = models = {
 				l."name" CIV_CODE,
 				t.dt REG_DATE,
 				l.fio CIV_NAME,
-				(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+				
+				(	COALESCE(str.NAME, '') || 
+				COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || 
+				CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || 
+				coalesce(' кв. '||s.kv, '')|| 
+				case when coalesce(s.kvart_char,'')='' then '' else '-'||s.kvart_char end AS address,
+				
 				v."name" SERV_NAME,
 				s.kp PERS,
 				s.pl_o SQ,
@@ -272,7 +289,12 @@ module.exports = models = {
 		s.ls UID,
 		l."name" CIV_CODE,
 		l.fio CIV_NAME,
-		(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+		(	COALESCE(str.NAME, '') || 
+			COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || 
+			CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || 
+			coalesce(' кв. '||s.kv, '')|| 
+			case when coalesce(s.kvart_char,'')='' then '' else '-'||s.kvart_char end AS address,
+
 		s.kp PERS,
 		s.pl_o SQ
 			from sheta s
@@ -300,7 +322,11 @@ module.exports = models = {
 			s.ls uid,
 			l."name" CIV_CODE,
 			l.fio FIO,
-			(COALESCE(str.NAME, '') || COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || coalesce(' кв. '||s.kv, '') AS address,
+			(	COALESCE(str.NAME, '') || 
+			COALESCE(', д.' || s.home||s.house_char||s.house_drob, '')) || 
+			CASE WHEN coalesce(s.korp,'') = '' THEN '' ELSE '/'||s.korp end || 
+			coalesce(' кв. '||s.kv, '')|| 
+			case when coalesce(s.kvart_char,'')='' then '' else '-'||s.kvart_char end AS address,
 			--s.kp PERS,
 			--s.pl_o SQ,
 			--t.id_period,'

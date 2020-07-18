@@ -27,7 +27,6 @@ async function getAccount(uid, id_provider){
     res = u.rows[0].account;
     return res;
 }
-
 async function getUid(account, id_provider){ 
     let u = await global.pool_account.query('select ls uid from ls_shet ls where ls."name"=$1 and ls.kod_org = $2',[account, id_provider]);  
     if (u.rows.length>0){
@@ -49,16 +48,21 @@ async function checkRequestObjectPattern(incomeParams) {
     });
     return res;
 }
-
 async function checkUID(uid){
     //console.log(uid);
     var res = false;
+    try{
     var u = await (execQuery(model_account.accountCheckUID,[uid], global.pool_account));
     //console.log("UID COINT="+u.rows[0].count);
     if (u.rows[0].count!=1){
         res =  false;
     } else{ res =  true;}
     return res;
+    } catch(error){
+        console.log("ERROR CHECK UID "+error);
+        return false;
+    }
+    
 
 }
 

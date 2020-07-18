@@ -3,7 +3,6 @@ Router = require('express-promise-router'),
 router = new Router(),
 models = require('./models/models_account'),
 { checkJWT } = require('./libs/auth'),
-Step = require('step'),
 async = require('async');
 libs = require('./libs/functions');
 var request = require('request');
@@ -21,11 +20,11 @@ router.get('/account/getBLANK2016/:ls/:code', async (req, res)=> {
     const uid = u.rows[0].uid;
 
     const blank2016_count = await (libs.execQuery(models.accountBlank2016Count,[uid], global.pool_account));
-    //console.log(blank2016_count.rows[0].count);
     const row_count = blank2016_count.rows[0].count;
     if(row_count==0){
         //Если нет записей за этим лицевым счетом, запросим данные в ТГО    
-        var url = 'http://85.238.97.144:3000/webload/'+req.params.ls+'.0000000000.0';
+        var url = 'http://91.228.59.190:3000/webload/'+req.params.ls+'.0000000000.0';
+//        var url = 'http://billing.citypay.org.ua:3000/webload/'+req.params.ls+'.0000000000.0';
         request (url, async (error, response, body)=> {
             if (!error && response.statusCode === 200) {
                 var r = await JSON.parse(body)
@@ -63,14 +62,20 @@ router.get('/account/getBLANK2016/:ls/:code', async (req, res)=> {
                 } else {
                 //Если доступа к базе ТГО нет, то брать информацию с  сервера
                 res.status(400).json({ "status": 400, "error": "Error connect central DB", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+                return;
                 }
         })    
     }else{
         //Если запись найдена выводим информацию из нашей базы
         const bank2016_get = await libs.execQuery(models.accountBlank2016Get,[uid,kod_org],pool_account);
         res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": bank2016_get.rows });
+        return;
     }
-}else{res.status(400).json({ "status": 400, "error": "Not find Account", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });}
+}else{
+    res.status(400).json({ "status": 400, "error": "Not find Account", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+    return;
+    }
+
 })
 
 router.post('/account/getPeriod', async (req, res) => {
@@ -90,17 +95,18 @@ router.post('/account/byAcc', async (req, res) => {
         provider_id=req.body.provider_id;
     }
     const uid = await libs.getUid(req.body.account, provider_id);
-    //console.log('Step 1: '+uid+", "+req.body.account+", "+provider_id);
-     if (uid>0){ 
+     if ((uid>0)&&(parseInt(uid)==uid)){ 
         //пробуем получить данные с внешнего протокола
         await updateTGO(uid, req.body.account, provider_id);
         //теперь получаем данные по uid
         console.log("byAcc: "+req.body.account);
         const r = await libs.execQuery(models.accountByDATA, [uid], global.pool_account);
         res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
-     }else
+        return;
+     }else{
         res.status(400).json({ "status": 400, "error": "Not find UID", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
-
+        return;
+        }
     });
 
 
@@ -144,7 +150,7 @@ router.post('/account/getCalc', async (req, res) => {
 
      async.waterfall([   
         async function StepUpdateTGO(){
-            if (uid>0){
+            if ((uid>0)&&(parseInt(uid)==uid)){
                 //uid = u.rows[0].uid;
                 console.log("updateTGO from getCalc: "+req.body.account+", "+uid+", "+provider_id);
                 await updateTGO(uid, req.body.account, provider_id);
@@ -152,14 +158,16 @@ router.post('/account/getCalc', async (req, res) => {
                 uid=0;
         },
         async function StepResult(){
-            if (uid>0){ 
+            if ((uid>0)&&(parseInt(uid)==uid)){ 
                 //теперь получаем данные по uid
                 const r = await libs.execQuery(models.accountGetCalc, [uid,provider_id], global.pool_account);
             //Синхроним отправленные счета
                 const d = await 
                 res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
+                return;
             }else
                 res.status(400).json({ "status": 400, "error": "Not find UID", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+                return;
         }
     ]);
 }),
@@ -368,16 +376,12 @@ router.post('/account/updateTGO',async (req,res)=>{
 
 async function updateTGO(uid, account, provider_id){
     if (provider_id!=39){
-            //console.log("provider_id!="+provider_id);
             provider_id = 39; 
     }
     var wrk_period = await libs.getWorkPeriod();
-//    var wrk_period = await libs.getCurrPeriod();
-    console.log();
-    var url = 'http://85.238.97.144:3000/webload/'+account+'.'+wrk_period+'.6';
-    //console.log(url);
+    var url = 'http://91.228.59.190:3000/webload/'+account+'.'+wrk_period+'.6';
+//  var url = 'http://billing.citypay.org.ua:3000/webload/'+account+'.'+wrk_period+'.6';
         await request (url, async (error, response, body)=> {
-            
             if (!error && response.statusCode === 200) {
                 const fbResponse = await JSON.parse(body)
                 const dt = fbResponse['message'][0];
@@ -390,6 +394,7 @@ async function updateTGO(uid, account, provider_id){
                     var today = new Date();
                     var options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' };
                     
+                    try{
                     var tsa_insert = await libs.execQuery(models.accountTsaInsert,[    
                                             uid,
                                             moment().format('DD.MM.YYYY hh:mm:ss.SSS'),
@@ -412,6 +417,12 @@ async function updateTGO(uid, account, provider_id){
                                             
                                             global.pool_account);
                     console.log("INSERT TSA "+uid+" period_id: "+wrk_period);
+                    return;
+                    }catch(error){
+                        console.log("ERROR INSERT DUBLICAT TSA: "+ error);    
+                        return;
+                    }
+                    
                 }else{
                     //console.log("UPDATE PERIOD "+dt[i]['PERIOD_ID']);
                     //Обновляем данные в sheta
@@ -454,9 +465,11 @@ async function updateTGO(uid, account, provider_id){
                         ]
                         ,global.pool_account
                     ) 
+                    return;
                 }
             } else {
               console.log("Error connect to Oracle: ");
+              return;
             } 
     
         });
@@ -477,7 +490,9 @@ async function sendCounterTGO(payid, uid, payidbank, provider_id, placecode,date
     pay_bank_id = payidbank.toString();
     var options = {
         method: 'POST',
-        uri: 'http://85.238.97.144:3000/webload/addCounter',
+//        uri: 'http://85.238.97.144:3000/webload/addCounter',
+//        uri: 'http://billing.citypay.org.ua:3000/webload/addCounter',
+        uri: 'http://91.228.59.190:3000/webload/addCounter',
         body: {
             "account":acc,
             "provider_id":provider_id,

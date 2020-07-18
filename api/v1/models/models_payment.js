@@ -115,6 +115,7 @@ module.exports = models = {
         name:'get pay tgo',
         text: 'select pay_id_tgo from payments where id=$1'
     },
+    
     paymentSetBankID:{
         name: 'set bank id',
         text:'update payments SET pay_id_bank=$2 where id=$1 and client_id=$3 RETURNING pay_id_bank'

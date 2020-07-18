@@ -12,12 +12,22 @@ router.get('/heatmeter/setParams', async (req, res) => {
     const id_heatmeter = 0; //h.rows[0].id;
     
     if(Boolean(req.query)==true){
+        try{
         let h = await libs.execQuery(models.heatmeterGetId, [req.query.sn], global.pool_heatmeter)
         if (Boolean(h.rows)==true)
             {id_heatmeter = h.rows[0].id;}
         else
-            {console.log("NOT FIND SN: "+req.query.sn)}
-    }else{console.log("ERROR query: "+req.query)}
+            {console.log("NOT FIND SN: "+req.query.sn);
+            return;
+        }
+        }catch(error){
+          console.log("NOT FIND SN [GET] "+error);
+          return;  
+        }    
+    }else{
+        console.log("ERROR query: "+req.query);
+        return;
+    }
 
     if (id_heatmeter > 0) {
         console.log(h.rows[0].id);
@@ -40,9 +50,13 @@ router.get('/heatmeter/setParams', async (req, res) => {
             global.pool_heatmeter);
             //console.log("setParams GET id_heatmeter="+id_heatmeter);
         res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
+        return;
 
     } else
-        res.status(400).json({ "status": 400, "error": "Not find heatmeter: " + req.query.sn, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+        {res.status(400).json({ "status": 400, "error": "Not find heatmeter: " + req.query.sn, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+        return;
+        }
+
     //console.log(req.query.sn);
     //res.send(req.query.id);
 });
@@ -51,15 +65,22 @@ router.post('/heatmeter/setParams', async (req, res) => {
     var id_heatmeter = 0;
     
         if(Boolean(req.body)==true){
-            let h = await libs.execQuery(models.heatmeterGetId, [req.body.sn], global.pool_heatmeter)
-            if (Boolean(h.rows)==true)
-                {id_heatmeter = h.rows[0].id;}
-            else
-                {console.log("NOT FIND SN [POST]: "+req.body.sn)}
-        }else{console.log("ERROR BODY [POST]: "+req.body)}
+            try{
+                let h = await libs.execQuery(models.heatmeterGetId, [req.body.sn], global.pool_heatmeter)
+                 if (Boolean(h.rows)==true)
+                    {id_heatmeter = h.rows[0].id;}    
+                
+                else        
+                {console.log("NOT FIND SN [POST]: "+req.body.sn); return; }
+            }catch(error){
+                console.log("ERROR HEATMETER ID [POST]"+req.body.sn);
+                return;
+            }
+        }else{console.log("ERROR BODY [POST]: "+req.body); return;}
         
 
         if (id_heatmeter > 0) {
+            try{
             const r = await libs.execQuery(models.heatmeterSetPararams, [req.body.client_id,
             id_heatmeter,
             req.body.power,
@@ -79,6 +100,11 @@ router.post('/heatmeter/setParams', async (req, res) => {
                 global.pool_heatmeter);
             //console.log("setParams POST id_heatmeter="+id_heatmeter);
             res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows });
+            }catch(error){
+                console.log("Error register param heatmeter "+error);
+                res.status(400).json({ "status": 400, "error": "Error register param heatmeter", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+                return;
+            }
 
         } else
             res.status(400).json({ "status": 400, "error": "Not find heatmeter: " + req.body.sn, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });

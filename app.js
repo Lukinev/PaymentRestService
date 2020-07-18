@@ -3,20 +3,22 @@ const
   cluster = require('cluster'),
   compression = require('compression'),
   { Pool, types } = require('pg'),
+  fb = require('node-firebird'),
   fs = require('fs'),
   http = require('http'),
   https = require('https'),
-
-  
   express = require('express'),
   app = express(),
   conf = require('./config'),
+  fbPoll = fb.pool(5, conf.fb_options),
   api_router = require('./api/api.js');
   var cors = require('cors');
 
 // use to correct convert to float & bigint from postgresql
 types.setTypeParser(1700, 'text', parseFloat);
 types.setTypeParser(20, 'text', parseInt);
+
+
 
 // option for use HTTPS
 const https_options = {
@@ -37,9 +39,11 @@ rejectUnauthorized: false
 };
 
 // pools of connections to DB 
+
 global.pool_account = new Pool(conf.pg_pool_conn_param_accounts);
 global.pool_payment = new Pool(conf.pg_pool_conn_param_payments);
 global.pool_heatmeter = new Pool(conf.pg_pool_conn_param_heatmeter);
+
 
 let numCPUs = require('os').cpus().length;
 
@@ -53,9 +57,9 @@ if (cluster.isMaster) {
   console.log('Master ${process.pid} is running');
 
   // Fork workers.
-  for (let i = 0; i < numCPUs; i++) {
+  //for (let i = 0; i < numCPUs; i++) {
     cluster.fork();
-  }
+  //}
 
   cluster.on('exit', (worker, code, signal) => {
     console.log('worker %d died (%s). restarting...',

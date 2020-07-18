@@ -55,38 +55,60 @@ router.post('/payment/create_pack', async (req, res) => {
 router.post('/payment/create', async (req, res) => {
     var st= await checkJWT(req.body);
     var pay_id_bank = 0;
+    var uid = req.body.uid;
     //console.log(req.body);
     if (st.status==200) 
     {
-                if ((await libs.checkUID(req.body.uid))==false){
+                if (((parseInt(uid) != uid))||((await libs.checkUID(uid))==false)){
+                    Console.log('Error uid='+parseInt(req.body.uid));
                     res.status(400).json({ "status": 400, "error": "Error uid", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
-                }else if (req.body.amount<=0){
-                    //  Тут проверим ammount необходимо что бы число было больше нуля
-                    res.status(400).json({ "status": 400, "error": "Error sum to pay:"+req.body.amount, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
-                    //  Тут проверим ammount необходимо что бы число было больше нуля
-                }else if (typeof req.body.amount != "number"){ 
-                    res.status(400).json({ "status": 400, "error": "Error sum to pay:"+req.body.amount, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+                    return;
                 }
-                else
-                {
-                    if (Boolean(req.body.pay_id_bank)){
-                        pay_id_bank=req.body.pay_id_bank;
+                
+                if (req.body.amount<=0){
+                    //  Тут проверим ammount необходимо что бы число было больше нуля
+                    res.status(400).json({ "status": 400, "error": "Error sum to pay:"+req.body.amount, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+                    return;
+                    //  Тут проверим ammount необходимо что бы число было больше нуля
+                }
+                
+                if (typeof req.body.amount != "number"){ 
+                    res.status(400).json({ "status": 400, "error": "Error sum to pay:"+req.body.amount, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
+                    return;
+                }
+                if (Boolean(req.body.pay_id_bank)){
+                    pay_id_bank=req.body.pay_id_bank;
                     }
-                    var uid = req.body.uid;
-                    const r = await libs.execQuery(models.paymentNewPay,[
-                    uid,                 
-                    req.body.amount, 
-                    req.body.service_id, 
-                    req.body.provider_id, 
-                    req.body.createpay, 
-                    req.body.client_id,
-                    pay_id_bank
-                    ], global.pool_payment);
-                console.log("Create payment uid="+uid+" pay_id_bank="+pay_id_bank);
+                    try{
+                    if ((parseInt(uid)==uid)&&(uid>0)){        
+                        const r = await libs.execQuery(models.paymentNewPay,[
+                        uid,                 
+                        req.body.amount, 
+                        req.body.service_id, 
+                        req.body.provider_id, 
+                        req.body.createpay, 
+                        req.body.client_id,
+                        pay_id_bank
+                        ], global.pool_payment);
+                        console.log("Create payment uid="+uid+" pay_id_bank="+pay_id_bank+" client_id="+req.body.client_id+" r="+r.rows[0].id);
+                        //await selectNotSendTGO();
+                        //fixPayTGO(payid, pay_id_tgo
+                        res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows});
+                        //Отключил отправку платежей пока денис не починет базу
+			await selectNotSendTGO();
+                        return;
 
-                await selectNotSendTGO();
-                res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": r.rows});
-                }
+                    } else {
+                        res.status(400).json({ "status": 400, "error": "ERROR UID FORMAT", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "error": "ERROR UID FORMAT "+uid });
+                        return;
+                    }
+
+                    }catch(error){
+                        console.log("INSERT ERROR REGISTER PAY: "+error+" client_id "+req.body.client_id);
+                        res.status(400).json({ "status": 400, "error": "INSERT ERROR REGISTER PAY", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "error": error });
+                        return;
+                    }
+                
     } else
         res.status(400).json({ "status": 400, "error": "Bad autorized token", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "token": st.status });
     
@@ -208,24 +230,6 @@ router.post('/payment/delPayTGO', async(req,res)=>{
 /**Функция созданна исключительно для банка easypay для подверждения принятого платежа
  */
 router.post('/payment/setPayIdEasy', async(req,res)=>{
-        /*
-        {order_id - ваш ордерИД из,
-            payment_id - наш номер транзакции,
-            merchant_id -  номер вашего сервиса в нашей системе 
-
-            "action":"payment",
-            "merchant_id":5310,
-            "order_id":682,
-            "version":"v3.0",
-            "date":"2018-05-15T16:38:13.3840522+03:00",
-            "details":{
-            "amount":1.00,
-            "desc":"test ",
-            "payment_id":123456,
-            "recurrent_id":null
-        }
-        }
-        */ 
         //console.log(parseInt(req.body.order_id, 10));
 
         const client_id=5;
@@ -236,8 +240,8 @@ router.post('/payment/setPayIdEasy', async(req,res)=>{
         //console.log(pay.rows[0]);
        if (Boolean(pay.rows[0])){
         console.log("fix pay payment_id="+payment_id+", pay_id_bank="+pay_id_bank+", client_id="+client_id);
-        let a = await selectNotSendTGO();
         res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": pay.rows });
+        let a = await selectNotSendTGO();
        }else{
         res.status(400).json({ "status": 400, "error": "Not find pay", "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "dataset": null });
        }
@@ -245,18 +249,18 @@ router.post('/payment/setPayIdEasy', async(req,res)=>{
 
 
 router.post('/payment/sendNotFixPay', async(req,res)=>{
-    //await selectNotSendTGO();
-    //console.log("manual run selectNotSendTGO");
-    //res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "FIX": "OK" });
-    
+    await selectNotSendTGO();
+    console.log("manual run selectNotSendTGO (DISABLED)");
+    res.status(200).json({ "status": 200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'), "FIX": "OK" }); 
 })
 //Выбор записей не переданных в ТГО
 async function selectNotSendTGO() {
     //Выбираем все записе не отправленные в биллинг
     const res = await libs.execQuery(models.paymentGetNotSendPay,[],global.pool_payment);
     if ((res.rowCount>0)){
-        for (var i = 0; i < res.rows.length; i++) {
-            
+        //Отключаю, для невозможности дублирования платежей - временно
+        //for (var i = 0; i < res.rows.length; i++) {
+            let i = 0;
             await sendPayTGO(
                     res.rows[i].id, 
                     res.rows[i].uid,
@@ -266,13 +270,15 @@ async function selectNotSendTGO() {
                     res.rows[i].client_id,
                     res.rows[i].provider_id 
                     );            
-        console.log("selectNotSendTGO "+res.rows[i].id);
+            console.log("selectNotSendTGO "+res.rows[i].id)+" client_id "+res.rows[i].client_id;
+            
 
-        }
+        //}
     }
     else{
         console.log("notfind unregistered pay");
-    }    
+    }
+    return;    
 }
 
 router.post('/payment/getPayTGO', async(req,res)=>{
@@ -292,7 +298,9 @@ router.post('/payment/getPayTGO', async(req,res)=>{
 async function getPayTGO(account){
     var options = {
         method: 'GET',
-        uri: 'http://85.238.97.144:3000/webload/'+account+'.0000000000.3'
+//        uri: 'http://85.238.97.144:3000/webload/'+account+'.0000000000.3'
+        uri: 'http://91.228.59.190:3000/webload/'+account+'.0000000000.3'
+//        uri: 'http://billing.citypay.org.ua:3000/webload/'+account+'.0000000000.3'
     };
 
     let list=await rp(options).then(async function (body, result) {
@@ -324,7 +332,9 @@ async function deletePayTGO(payment_id, pay_id_tgo){
         m_PAY_ID IN NUMBER
         )  RETURN NUMBER;
         */
-        uri: 'http://85.238.97.144:3000/webload/delPay',
+//        uri: 'http://85.238.97.144:3000/webload/delPay',
+        uri: 'http://91.228.59.190:3000/webload/delPay',
+//        uri: 'http://billing.citypay.org.ua:3000/webload/delPay',
         body: {
             "pay_id_tgo":pay_id_tgo
         },
@@ -372,9 +382,12 @@ async function sendPayTGO(payid, uid, payidbank, amount, dt, client_id, provider
     }
         
     pay_bank_id = payidbank.toString();
+
     var options = {
         method: 'POST',
-        uri: 'http://85.238.97.144:3000/webload/addPay',
+//        uri: 'http://85.238.97.144:3000/webload/addPay',
+        uri: 'http://91.228.59.190:3000/webload/addPay',
+//        uri: 'http://billing.citypay.org.ua:3000/webload/addPay',
         body: {
             "payid":payid,
             "account": acc,
