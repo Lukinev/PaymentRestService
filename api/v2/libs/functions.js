@@ -2,8 +2,10 @@ const moment = require('moment'),
 model_account = require('../models/models_account');
 
 async function execQuery(model, params, connection) {
+    
     return connection.query(model, params); // returns result of query using pool connect from params "connection"
 }
+
 
 async function getWorkPeriod(){ 
     let u = await global.pool_account.query(model_account.accountWorkPeriod);  
@@ -70,25 +72,6 @@ async function checkAmount(amount){
         res = false;
     }else{res=true;}
     return res;
-}
-async function checkPAY(body){
-    var res = false;
-    var err= "Error ";
-    var uid = await checkUID(body.uid);
-    var amount = await checkAmount(body.amount);
-    
-    if (uid==false){
-        err += " Not find uid "+body.uid+"\n";
-    }
-    if (amount==false){
-        err += " Check ammoun "+body.amount+"\n";   
-    }
-    if (uid && amount){
-        res = true;
-    } 
-    
-    console.log("Error="+err);
-    return {res : res, err : err};
 }
 
 module.exports = { 

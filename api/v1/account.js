@@ -109,7 +109,6 @@ router.post('/account/byAcc', async (req, res) => {
         }
     });
 
-
 //Получение данных по UID
 router.post('/account/getUID', async (req, res) => {
 var uid = req.body.uid;
@@ -476,7 +475,6 @@ async function updateTGO(uid, account, provider_id){
         
 
 }
-
 
 //Отправляем показания счетчика в ТГО
 async function sendCounterTGO(payid, uid, payidbank, provider_id, placecode,date_prev, start_val, date_curr, new_val, unit, serv, meter_id, link_id, load_id, notes) {
