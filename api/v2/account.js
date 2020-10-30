@@ -2,6 +2,7 @@ const moment = require('moment'),
 Router = require('express-promise-router'),
 router = new Router(),
 bcrypt = require('bcrypt'),
+jwt = require('jsonwebtoken'),
 
 account = require('./models/models_account'),
 { checkJWT } = require('./libs/auth'),
@@ -38,21 +39,24 @@ router.post(nameRoute+'login', async (req, res) => {
             if (Boolean(h[0])) {
               const hash = await h[0].PASSWORD_HASH;
 
-              //Необходимо сделать генерацию хешпароля в базу
-              //let new_hash = bcrypt.hashSync(req.body.password, 256);
-              //console.log(new_hash);
+              /*TODO**Необходимо сделать генерацию хешпароля в базу
+              let new_hash = bcrypt.hashSync(req.body.password, 256);
+              console.log(new_hash);
+              */
 
               let salt = bcrypt.genSaltSync(256);
-              
+
+              let token = await jwt.sign({id:h[0].id}, conf.jwt_params.jwt_secret, {expiresIn:86400});
+       
               if (bcrypt.compareSync(req.body.password, hash, salt)){
-                  res.status(200).send({result: 200, data: h});
+                  res.status(200).send({result: 200, auth: true, jwt: token, data: h});
               }
               else{
                   res.status(401).send({auth: false, email:req.body.email});
                   console.log('error login by email:', req.body.email);
               }
             } else {
-              res.status(400).send({result: 400, error: 'Not find records'});
+              res.status(400).send({result: 400, auth:false, jwt: null, error: 'Not find records'});
             }
 
         //return res;
