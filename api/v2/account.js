@@ -21,6 +21,11 @@ router.post(nameRoute, async(req, res)=>{
       "query":"post",
       "email":"string",
       "password":"string"
+      },
+      "register":{
+        "query":"post",
+        "email":"post",
+        "password":"string"
       }
   }
 });
