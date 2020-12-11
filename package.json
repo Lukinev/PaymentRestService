@@ -1,6 +1,6 @@
 {
   "name": "CAPservice",
-  "version": "2019.07.09",
+  "version": "2020.12.09",
   "private": true,
   "scripts": {
     "start": "node app.js"

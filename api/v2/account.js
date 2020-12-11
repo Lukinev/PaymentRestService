@@ -6,13 +6,13 @@ jwt = require('jsonwebtoken'),
 
 account = require('./models/models_account'),
 { checkJWT } = require('./libs/auth'),
-async = require('async');
-libs = require('./libs/functions');
-const { Console } = require('console');
-var request = require('request');
-conf = require('../../config');
+async = require('async'),
+libs = require('./libs/functions'),
+request = require('request'),
+conf = require('../../config'),
+nameRoute = '/account/';
 
-const nameRoute = '/account/';
+const { Console } = require('console');
 //Перечень ссылок используемых в работе
 router.post(nameRoute, async(req, res)=>{
   res.status(200).json({"status":200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'),
@@ -34,9 +34,10 @@ router.post(nameRoute, async(req, res)=>{
 
 router.post(nameRoute+'login', async (req, res) => {
   try{ 
+
+    //global.
     global.poolFB.get(async function (err, db) {
       db.query(account.checkLogin.text, [req.body.email], async function(error, result) {
-
           if (error) throw (error);
           // IMPORTANT: release the pool connection
             let h = await result;
@@ -98,4 +99,52 @@ catch(err) {
 }
   });
 
+
+
+  router.post(nameRoute+'registrEmail', async(req, res)=>{
+    try{
+      const email = await libs.checkEmail(req.body.email)
+      if (!Boolean(email)){
+        //
+        //тут сообщаем что ваш емаил зарегистрирован
+        //const insertEmail = await libs.insertEmail(req.body.email) 
+
+        let insertEmail = await libs.execQuery(account.insertEmail, [req.body.email, req.body.lat, req.body.long], global.pool_terminal)
+        console.log('insertEmail', insertEmail);
+        if (Boolean(insertEmail)){
+        res.status(200).send({result: 201, auth: true, exist:false, email: req.body.email, text:'new email', lat:req.body.lat, long: req.body.long})
+        }else{
+        res.status(400).send({result: 400, auth: true, exist:false, email: req.body.email, text:'error insert email '})
+        }
+
+        
+      }else{
+        //Тут делаем регистрацию email
+        res.status(200).send({result: 200, auth: true, exist: true, email: email, text:'email exist'})
+      }
+      return email;
+      /*global.poolFB.get(async function (err, db) {
+        db.query(account.checkLogin.text, [req.body.email], async function(error, result) {
+          if (error) throw (error);
+          // IMPORTANT: release the pool connection
+            let h = await result;
+            //console.log(h[0].FIO);
+            if (!Boolean(h[0])) {
+              //Тут делаем регистрацию данной информации
+            } else {
+              res.status(400).send({result: 300, auth:false, jwt: null, error: 'Email exist'});
+            }
+        //return res;
+        db.detach(); 
+        })
+    })*/
+    }
+    
+      catch(err) {
+        res.status(500).send({ auth: false, error: err });
+        console.log('auth: false', err);
+        return;
+    }
+
+  })
 module.exports = router;

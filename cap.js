@@ -28,9 +28,11 @@ const https_options = {
 
 // pools of connections to DB 
 global.poolFB = new fb.pool(5, conf.fb_options),
+
 global.pool_account = new Pool(conf.pg_pool_conn_param_accounts);
 global.pool_payment = new Pool(conf.pg_pool_conn_param_payments);
 global.pool_heatmeter = new Pool(conf.pg_pool_conn_param_heatmeter);
+global.pool_terminal = new Pool(conf.pg_pool_conn_param_terminal);
 
 let numCPUs = require('os').cpus().length;
 // if in config set CPUs number then used it. Else if in config set CPUs number === 0, then used CPUs number of server 
