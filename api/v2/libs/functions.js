@@ -5,8 +5,14 @@ async function execQuery(model, params, connection) {
     return connection.query(model, params); // returns result of query using pool connect from params "connection"
 }
 
+async function checkLogin(email, password){
+    let u = await global.pool_terminal.query(model_account.checkLogin, [email, password]);
+    res = u.rows[0];
+    return res;
+}
+
 async function checkEmail(email){
-    let u = await global.pool_terminal.query(model_account.checkLogin, [email]);
+    let u = await global.pool_terminal.query(model_account.checkEmail, [email]);
     res = u.rows[0];
     return res;
 }
@@ -97,5 +103,6 @@ module.exports = {
     getAccount,
     getUid,
     checkEmail,
+    checkLogin,
     insertEmail
  }
