@@ -1,25 +1,37 @@
 {
-  "name": "CAPservice",
-  "version": "2020.12.09",
+  "name": "AML",
+  "version": "2021.02.25",
   "private": true,
   "scripts": {
-    "start": "node app.js"
+    "dev": "nodemon aml.js",
+    "start": "node aml.js"
   },
   "dependencies": {
+    "add": "^2.0.6",
+    "apple-auth": "^1.0.7",
     "async": "^2.6.2",
-    "bcrypt": "^5.0.0",
     "body-parser": "^1.19.0",
     "compression": "^1.7.4",
+    "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "ejs": "^3.1.6",
     "express": "^4.17.1",
     "express-promise-router": "^3.0.3",
+    "express-session": "^1.17.1",
+    "google-auth-library": "^7.0.2",
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.22.2",
     "node-datetime": "^2.1.2",
-    "node-firebird": "^0.8.7",
+    "passport": "^0.4.1",
+    "passport-auth0": "^1.4.0",
     "pg": "^7.11.0",
+    "process-env": "^2.0.2",
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
     "step": "^1.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
   }
 }

@@ -1,25 +1,27 @@
 const jwt = require('jsonwebtoken'),
     conf = require('../../../config');
 
-const checkJWT = async function (inputParams) {
-    let res = {};
-    jwt.verify(inputParams.user_token, conf.jwt_params.jwt_secret, conf.jwt_params.jwt_option, function (err, decoded) {
-        //console.log(JSON.stringify(decoded.client_name)+" == "+JSON.stringify(inputParams.client_name)+" && "+JSON.stringify(decoded.client_id)+"==="+JSON.stringify(inputParams.client_id)); 
-        if (err) {
-            res = { status: 402 };
-        }
-        else {
-            //console.log(JSON.stringify(decoded.client_name)+" == "+JSON.stringify(inputParams.client_name)+" && "+JSON.stringify(decoded.client_id)+"==="+JSON.stringify(inputParams.client_id)); 
-            if (JSON.stringify(decoded.client_name) == JSON.stringify(inputParams.client_name) && JSON.stringify(decoded.client_id) === JSON.stringify(inputParams.client_id)) {
-                res = { status: 200 }
-            }
-            else {
-                res = { status: 401 }
-            }
-        }
-    });
+
+const createJWT = async function (email) {
+    //console.log('EMAIL', email)
+    const res = await jwt.sign(email, conf.jwt_params.jwt_secret, {algorithm: conf.jwt_params.jwt_option.alg} , {expiresIn: '84000'});
+    //console.log('RES', res)
     return res;
 }
 
-module.exports = { checkJWT };
+const checkJWT = async function (token) {
+    let result = {};
+     jwt.verify(token, conf.jwt_params.jwt_secret,  async function (err, decoded) {
+       // console.log(JSON.stringify(decoded.email)+" == "+JSON.stringify(inputParams.email)+" && "+JSON.stringify(decoded.email)+"==="+JSON.stringify(inputParams.email)); 
+        if (err) {
+            result = { status: 402, error: err };
+        }
+        else {
+                result = { status: 200, email: decoded }
+        }
+    });
+    return result;
+}
+
+module.exports = { checkJWT, createJWT };
 
