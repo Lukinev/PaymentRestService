@@ -1,24 +1,52 @@
 const moment = require('moment'),
 model_account = require('../models/models_account');
+const conf = require('./../../../config');
+const { Pool } = require('postgres-pool');
 
-async function execQuery(model, params, connection) {
-    return connection.query(model, params); // returns result of query using pool connect from params "connection"
-}
+const pool = new Pool(conf.pg_pool_conn_param_accounts);
+
 
 async function checkEmail(email){
-    let u = await global.pool_accounts.query(model_account.checkEmail, [email]);
-    res = u.rows[0];
-    return res;
+    let u = null; 
+    await pool.connect()
+     .then(client => {
+         return client      
+        .query(model_account.checkEmail, [email])
+       .then(res => {
+         client.release()
+         u = res.rows[0]; 
+         
+      })
+     .catch(err => {
+         client.release()
+         console.log(err.stack)
+         u = null;
+       })
+   })
+
+    return u;
 }
 
-async function insertEmail(email){
-    let u = await global.pool_accounts.query(model_account.insertEmail, [email]);
-    res = u.rows[0];
-    return res;
+async function insertEmail(email, name){
+    let u = null;
+    await pool.connect()
+     .then(client => {
+         return client      
+        .query(model_account.insertEmail, [email, name])
+        .then(res => {
+         client.release()
+         u = res.rows[0];  
+      })
+     .catch(err => {
+         client.release()
+         console.log(err.stack)
+         u = null;
+       })
+   })
+    return u;
 }
 
 module.exports = { 
-    execQuery,
     checkEmail,
     insertEmail
  }

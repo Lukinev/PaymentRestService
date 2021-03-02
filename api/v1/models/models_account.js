@@ -8,7 +8,7 @@ module.exports = models = {
 
   insertEmail: {
     name: 'insertEmail',
-    required_fields: ['email'],
-    text:`insert into customer (email) values ($1) RETURNING id`
+    required_fields: ['email', 'name'],
+    text:`insert into customer (email, name) values ($1, $2) RETURNING id`
   },
 }

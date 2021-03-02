@@ -16,22 +16,30 @@ const CLIENT_ID =conf.GOOGLE_CLIENT_ID;  // Specify the CLIENT_ID of the app tha
 const {OAuth2Client} = require('google-auth-library');
 const client = new OAuth2Client(CLIENT_ID);
 
-async function checkAccount(email){
+/**Функция проверки пользователя в базе данных
+ * @param email - емаил пользователя
+ * @param name - имя пользователя из токена
+ * @returns - возвражает id пользователя в базе данных, в случае отсутствия пользователя - создает
+ */
+async function checkAccount(_email, _name=''){
   let _res = 0;
-  await libs.checkEmail(email)
-  .then(
-    async function(res){
-    if (Boolean(res)) {
-      _res=res.id;
+  await libs.checkEmail(_email)
+  .then(async (result_email)=>{
+      if (Boolean(result_email)) {
+      _res=result_email.id;
       }else{
-        await libs.insertEmail(email).then((result)=>{
-        _res = result;  
-        return result;
+        if (Boolean(_email)){
+          await libs.insertEmail(_email, _name).then((result)=>{
+          _res = result.id;  
+          return _res;
         })
+        }
       }
-    }).catch((error) => {
-          console.err(error);
-          _res = -1;
+    })
+
+  .catch((error) => {
+          console.log(error);
+          _res = null;
           }
         ) 
  return _res;
@@ -41,17 +49,27 @@ async function checkAccount(email){
  * с секретным ключем из conf
 */
 router.post(nameRoute+'createToken', async(req, res) => {
-  const newtoken = await createJWT(req.body.email);
+  let _customer_id = null;
+  const data = {
+    "email": req.body.email, 
+    "name": req.body.name
+  } ;
+
+  const newtoken = await createJWT(data);
+
+
   if (Boolean(newtoken)) {
-  res.status(200).json({
-  "status":200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'),
+    await checkAccount(data.email, data.name).then(async(cust)=>_customer_id=cust).catch(()=> _customer_id=null);
+    
+    res.status(200).json({
+    "status":200, "error": null,//.format('DD.MM.YYYY hh:mm:ss.SSS'),
     "data":{
       "token": newtoken,
-      "customer_id": null
+      "name": req.body.name
     }
     })
   }else{
-    res.status(500).send({auth: false, message: 'Failed to create token.' })
+    res.status(500).send({status: 500, error: 'Failed to create token.' })
   }
   });
 
@@ -60,13 +78,12 @@ router.post(nameRoute+'createToken', async(req, res) => {
    */
 router.post(nameRoute+'checkToken', async(req, res)=> {
   const token = req.body.token;
-  let customer_id = -1;
+  let customer_id = null;
     await checkJWT(token).then(async function (result) {
-      await checkAccount(result.email).then(async function(_customer_id){
-        customer_id = _customer_id;
-        //console.log(customer_id);
-      });
-      
+  
+        await checkAccount(result.email, result.name).then(async function(_customer_id){  
+        customer_id = _customer_id; });
+        
       res.status(200).json({"status":result.status, "email": result.email, "customer_id":customer_id});
      }).catch((error) => {
       res.status(400).json({"status":400, "error": error})
@@ -74,9 +91,6 @@ router.post(nameRoute+'checkToken', async(req, res)=> {
 
     });
 
-router.post(nameRoute+'readGoogleToken', async(req,res) => {
-  const token = req.body.token;
-})
 
 /**
 * Тестовая функция для генерации странички логина Google API
@@ -87,30 +101,39 @@ router.get(nameRoute+'loginGoogle', async(req, res) => {
 });
 
 /**
- * Тестовая функция обработки токена googla API 
+ * Функция обработки токена googla API 
  */
 router.post(nameRoute+'loginGoogle', async(req, res) => {
-  let token = req.body.token;
-
-  async function verify() {
-    const ticket = await client.verifyIdToken({
-        idToken: token,
+    async function verify() {
+      const ticket = await client.verifyIdToken({
+        idToken: req.body.token,
         audience: CLIENT_ID
-    });
+      });
+      
+      const payload = ticket.getPayload();
+      const userid = payload['sub'];
 
-    const payload = ticket.getPayload();
-    const userid = payload['sub'];
+   
+    if (Boolean(payload.email)){
+    //Генерим токен для доступа
+      const newtoken = await createJWT({"email":payload.email, "namep":payload.name});   
+      if (Boolean(newtoken)) {
+        await checkAccount(payload.email, payload.name);
 
-    res.status(200).json({
-      "status":200, "error": null, "timestamp": moment().format('DD.MM.YYYY hh:mm:ss.SSS'),
-      "data": {
-          "token":req.body.token,
-          "payload":payload
+        res.status(200).json({
+        "status":200, "error": null,
+        "data":{
+          "token": newtoken,
+          "name": payload.name
         }
-      })
+        })
+      }
     }
-    verify().catch(
-      console.error
+  }
+
+    verify().catch( async (error) =>{
+      res.status(500).json({"status": 500, "error": error.message})},
+
     );
 });
 

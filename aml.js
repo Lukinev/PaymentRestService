@@ -2,15 +2,15 @@ const
   bodyParser = require('body-parser'),
   cluster = require('cluster'),
   compression = require('compression'),
-   { Pool, types } = require('pg'),
+
   fs = require('fs'),
   https = require('https'),
   http = require('http'),
   express = require('express'),
   app = express(),
-  app_admin = express(),
-  
-  conf = require('./config'),
+  app_admin = express();
+  //const { Pool } = require('pg');
+  const conf = require('./config'),
 
   api_router = require('./api/api.js');
   api_admin_router = require('./admin/index.js');
@@ -19,11 +19,6 @@ const
   var cors = require('cors');
   const { Certificate } = require('crypto');
   dotenv = require('dotenv').config();;
-
-/**
- * POLL postgresql
- */
-  global.pool_accounts = new Pool(conf.pg_pool_conn_param_accounts);
 
 //option for use HTTPS
 /** 
@@ -38,9 +33,9 @@ const
 const https_options = {
   key: fs.readFileSync("./cert/key.pem"),
   cert: fs.readFileSync("./cert/cert.pem"),
-  passphrase: conf.password_crt // optional
-  //requestCert: true,
-  //rejectUnauthorized: true
+  passphrase: conf.password_crt, // optional
+  requestCert: false,
+  rejectUnauthorized: false,
 };
 
 let numCPUs = require('os').cpus().length;
